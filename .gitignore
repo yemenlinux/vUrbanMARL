@@ -216,3 +216,27 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# latex manuscript
+*.aux
+*.bbl
+*.blg
+*.fls
+*.log
+*.out
+*.spl
+*.synctex.gz
+*.toc
+*.pdf
+#manuscript/notes
+
+# other
+.copilot/
+uav_mobility/
+results/
+temp/
+pdf_files/
+VUMAS/outputs/
+VUMAS/_benchmarl
+outputs/
