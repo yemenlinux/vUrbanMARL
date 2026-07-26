@@ -1,9 +1,26 @@
 import torch
 from .base import UrbanScenario
 from torchrl.data import Composite, BoundedContinuous
-from urbanmarl.envs.specs import unbatched_uav_action_spec, unbatched_uav_reward_spec
 
 class Scenario(UrbanScenario):
+    """Scenario name: UAV_NAVIGATION
+    
+    Objective: 
+    We assume that multi-UAV assests base stations to improve the coverage
+    of a wireless network. A reward function based on line of sight ratio and collision penality
+    is designed to encourage the UAV agents to navigate the simulation 3D volume space 
+    to maximize the return value.
+    
+    Reward function: 
+        LoS ratio - collision penalty. 
+        The reward is calculated as the mean of the LoS (Line of Sight) ratio 
+        between UAVs and UEs (User Equipments) minus a penalty for collisions. 
+        The LoS ratio is computed as the mean of the `uav_ue_los` tensor along 
+        the last dimension, while the collision penalty is derived from the 
+        `uav_collisions` tensor. 
+        The final reward is returned as a tensor of shape (batch_size, n_uavs, 1).
+
+    """
     def __init__(self, config: dict):
         super().__init__(config)
         self.has_state = True
@@ -58,9 +75,6 @@ class Scenario(UrbanScenario):
             #
             if group.lower() == "uav" or group.lower() == "agents":
                 # Denormalise
-                # group_action[..., 0] = (group_action[..., 0] + 1.0) / 2.0 * env.max_h_speed
-                # group_action[..., 1] = group_action[..., 1] * torch.pi
-                # group_action[..., 2] = group_action[..., 2] * env.max_v_speed
                 dx = group_action[..., 0] * torch.cos(group_action[..., 1])
                 dy = group_action[..., 0] * torch.sin(group_action[..., 1])
                 dz = group_action[..., 2]
@@ -113,20 +127,18 @@ class Scenario(UrbanScenario):
         max_v_speed = float(env.max_v_speed)
         if group.lower() == "uav" or group.lower() == "agents":
             return Bounded(
-                low=torch.tensor([0.0, -torch.pi, -max_v_speed], device=env.device),
+                low=torch.tensor([-max_h_speed, -torch.pi, -max_v_speed], device=env.device),
                 high=torch.tensor([max_h_speed, torch.pi, max_v_speed], device=env.device),
                 shape=torch.Size([3]),
                 dtype=torch.float32, 
                 device=env.device
             )
-            
         
     def done(self, env):
         terminated = env.uav_collisions.any(dim=1) | (env.uav_battery <= 0.0).any(dim=1)
         truncated = env.current_step >= env.max_steps
         dones = terminated | truncated
         return dones, terminated, truncated
-
 
     def reward_spec(self, env, group):
         from torchrl.data.tensor_specs import Unbounded
@@ -138,17 +150,31 @@ class Scenario(UrbanScenario):
             )
     
     def reward(self, env):
+        """calculate the reward function per UAV-agent.
+
+        Args:
+            env (UrbanEnv): urbanMARL environment
+
+        Returns:
+            reward (torch.Tensor): reward tensor of shape (batch_size, n_uavs, 1)
+            
+        Reward function: LoS ratio - collision penalty. 
+        The reward is calculated as the mean of the LoS (Line of Sight) ratio 
+        between UAVs and UEs (User Equipments) minus a penalty for collisions. 
+        The LoS ratio is computed as the mean of the `uav_ue_los` tensor along 
+        the last dimension, while the collision penalty is derived from the 
+        `uav_collisions` tensor. 
+        The final reward is returned as a tensor of shape (batch_size, n_uavs, 1).
+        """
         # Current reward: LoS ratio minus collision penalty
         los_ratio = env.uav_ue_los.float().mean(dim=2, keepdim=True)
         collision_ratio = env.uav_collisions.float()
         return los_ratio - collision_ratio
     
-    
-    
-    def stat_spec(self, env):
+    def state_spec(self, env):
         from torchrl.data.tensor_specs import Unbounded
         # State spec (global CTDE) – can also be scenario-defined, but keep as before
-        n_env_param = 4 # alpha, beta, gamma
+        n_env_param = 4 # alpha, beta, gamma, E
         pos_dim = 3
         observarion_dim = 4
         state_per_env_dim = (
@@ -163,7 +189,7 @@ class Scenario(UrbanScenario):
         )
         
     def state(self, env):
-        n_env_param = 4 # alpha, beta, gamma
+        n_env_param = 4 # alpha, beta, gamma, E
         obs = env._get_obs()
         state = torch.cat([
             env._env.info[:, :n_env_param].view(env.batch_size[0], -1),
@@ -176,8 +202,14 @@ class Scenario(UrbanScenario):
         from torchrl.data.tensor_specs import Unbounded
         # 
         # alpha, beta, gamma, E
+        n_env_param = 4 # alpha, beta, gamma, E
         info_spec_unbatched = Composite(
             {
+                "urban_params": Unbounded(
+                    shape=torch.Size([n_env_param]),
+                    dtype=torch.float32,
+                    device=env.device,
+                ),
                 "collisions": Unbounded(
                     shape=torch.Size([1]),
                     dtype=torch.float32,
@@ -199,14 +231,48 @@ class Scenario(UrbanScenario):
         return info_spec_unbatched
     
     def info_global(self, env):
+        n_env_param = 4 # alpha, beta, gamma, E
         collision = env.uav_collisions.float().sum(dim=1)
         mean_velocity = torch.norm(env.uav_velocity, dim=-1)
         los = env.uav_ue_los.float().mean(dim=-1).mean(dim=-1, keepdim=True)
         return {
+            "urban_params": env._env.info[:, :n_env_param].view(env.batch_size[0], -1),
             "collisions": collision,
             "velocity": mean_velocity,
             "los": los,
         }
         
-    
+    def _render(self, env, mode='rgb_array'):
+        """Reterns renderable information for network digital twins.
+        Args:
+            env (UrbanEnv): urbanMARL environment
+            mode (str, optional): The rendering mode.
+                Available modes are 'rgb_array' and 'human'.
+                Defaults to 'rgb_array'.
+
+        Returns:
+            _type_: _description_
+        """
+        if not hasattr(self, 'render_idx'):
+            self.render_idx = np.random.randint(env.batch_size[0])
+        #
+        uav_positions = env.uav_agents_pos[self.render_idx].cpu()
+        ue_positions = env.ue_user_pos[self.render_idx].cpu()
+        los = env.uav_ue_los[self.render_idx]
+        los_links = []
+        if hasattr(env, "uav_ue_los"):
+            for uav in range(env.n_uavs):
+                for ue in range(env.n_ues):
+                    los_links.append({
+                        'source': uav_positions[uav], 
+                        'target': ue_positions[ue], 
+                        'los': los[uav, ue]
+                        })
+        # 
+        ndt = {
+            'uav_positions': uav_positions,
+            'ue_positions': ue_positions,
+            'links': los_links,
+        }
+        return ndt
 

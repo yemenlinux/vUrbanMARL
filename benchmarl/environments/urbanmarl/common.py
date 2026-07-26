@@ -3,6 +3,7 @@ from benchmarl.utils import DEVICE_TYPING
 
 from typing import Callable, Optional, Dict, List
 
+import torch
 from tensordict import TensorDictBase
 from torchrl.data import Composite
 from torchrl.envs import EnvBase
@@ -34,7 +35,18 @@ class UrbanEnvClass(TaskClass):
         return True
 
     def has_render(self, env: EnvBase) -> bool:
-        return False
+        return True
+    
+    @staticmethod
+    def render_callback(experiment, env: UrbanEnv, data: TensorDictBase):
+        """
+        BenchMARL callback for rendering during evaluation.
+        Called at every step during evaluation to provide 
+        pixels for video logging.
+        """
+        img = env.scenario.render(env, mode='rgb_array')
+        # img_tensor = torch.from_numpy(img).permute(2, 0, 1)  # (H,W,3) -> (3,H,W)
+        return img
 
     def max_steps(self, env: EnvBase) -> int:
         return env.max_steps
@@ -64,11 +76,13 @@ class UrbanEnvClass(TaskClass):
         return "urbanmarl"
 
     def log_info(self, batch: TensorDictBase) -> Dict[str, float]:
-        if "state" not in batch.keys():
+        if "info" not in batch.keys():
+            return {}
+        if ('next', 'info', 'urban_params') not in batch.keys(True, True):
             return {}
         info = {}
         for i in range(batch.batch_size[0]):
-            alpha, beta, gamma, E = batch.get("state")[i, 0, :4]
+            alpha, beta, gamma, E = batch.get(('next', 'info', 'urban_params'))[i, 0]
             name = f"reward_{alpha.item():.2f}_{int(beta.item())}_{gamma.item():.2f}_{E.item():.4f}"
             #
             reward = 0

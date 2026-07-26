@@ -4,10 +4,6 @@ import os
 from pathlib import Path
 
 # Add project root to path (adjust if notebook is in a subfolder)
-# project_root = Path.cwd().parent  # if notebook is in experiments/ or similar
-# if str(project_root) not in sys.path:
-#     sys.path.insert(0, str(project_root))
-# Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent ))
 #
 import warnings
@@ -16,6 +12,13 @@ warnings.filterwarnings(
     "ignore", 
     category=FutureWarning, 
     module="torchrl.modules.mcts.scores"
+)
+# Suppress the tensordict to_module warning
+warnings.filterwarnings(
+    "ignore",
+    message=".*TensorDict.to_module().*",
+    category=FutureWarning,
+    module="tensordict"
 )
 #
 import hydra
@@ -50,8 +53,9 @@ if __name__ == "__main__":
     experiment_config.parallel_collection = True
     # Initialize targeted operational context mapping
     # task = UrbanEnvTask.UAVMEC_OFFLOADING.get_from_yaml()
-    task = UrbanEnvTask.UAV_NAVIGATION.get_from_yaml()
+    # task = UrbanEnvTask.UAV_NAVIGATION.get_from_yaml()
     # task = UrbanEnvTask.UAV_UE_LOS.get_from_yaml()
+    task = UrbanEnvTask.COVERAGE.get_from_yaml()
     
     # Configure candidate algorithmic structures
     algorithm_config = MappoConfig.get_from_yaml()

@@ -1,7 +1,7 @@
 import torch
 from .base import UrbanScenario
 from torchrl.data import Composite, BoundedContinuous
-from urbanmarl.envs.specs import unbatched_uav_action_spec, unbatched_uav_reward_spec
+# from urbanmarl.envs.specs import unbatched_uav_action_spec, unbatched_uav_reward_spec
 
 class Scenario(UrbanScenario):
     def reset(self, env, tensordict=None, **kwargs):
@@ -111,7 +111,7 @@ class Scenario(UrbanScenario):
                 device=env.device
             )
     
-    def stat_spec(self, env):
+    def state_spec(self, env):
         from torchrl.data.tensor_specs import Unbounded
         # State spec (global CTDE) – can also be scenario-defined, but keep as before
         n_env_param = 4 # alpha, beta, gamma

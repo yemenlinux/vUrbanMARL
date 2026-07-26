@@ -42,6 +42,7 @@ class VectorizedUrbanMap:
         #                         dtype=torch.float32, device=device)
         self.has_envs = False
         
+        
     def get_info_lables(self):
         return ['alpha', 
                 'beta', 
@@ -62,6 +63,8 @@ class VectorizedUrbanMap:
         """
         if num_urbans != self.batch_size:
             num_urbans = self.batch_size
+        # buildings
+        self.building_data = []
         # Create a local RNG with the given seed
         rng = np.random.RandomState(seed)
         #
@@ -94,6 +97,7 @@ class VectorizedUrbanMap:
             n_buildings = int(beta * area_sq_km)
             if n_buildings == 0:
                 continue
+            building_data = []
             w = int(max(1, building_width[closest_index]))
             s = int(max(1, street_width[closest_index]))
             b_x = np.arange(self.map_margin, self.sim_x - w, w + s)
@@ -107,6 +111,11 @@ class VectorizedUrbanMap:
                 for x in b_x:
                     for y in b_y:
                         h_map[x:x+w, y:y+w] = heights[idx]
+                        building_info = {
+                            "position": [x+self.x_min, y+self.y_min, 0],
+                            "size": [w, w, heights[idx]]
+                        }
+                        building_data.append(building_info)
                         idx += 1
             self.height_maps[env_idx] = torch.tensor(h_map, 
                                                      dtype=torch.float32, 
@@ -120,74 +129,10 @@ class VectorizedUrbanMap:
                                                s], 
                                               dtype=torch.float32, 
                                               device=self.device)
+            self.building_data.append(building_data)
         
         
-    def o_build_ITU_P1410_maps(
-        self, 
-        num_urbans: int = 72
-    ):
-        """
-        Placeholder for potential future implementation of ITU-R P.1410 specific map generation logic.
-        Currently, the procedural generation is handled in generate_batch_maps() with flexible parameters.
-        """
-        if num_urbans != self.batch_size:
-            num_urbans = self.batch_size
-        #
-        samples = 10000
-        environment_rad = np.round(np.deg2rad(np.linspace(-180, 180, num_urbans)), 4)
-        # Distribute environment parameters using PPP
-        _alpha = np.round(np.random.uniform(0.1, 0.8, samples), 2)
-        _beta = np.random.uniform(100, 750, samples).astype(int)
-        _gamma = np.round(np.random.uniform(8, 50, samples), 2)
-        
-        building_width = 1000 * np.sqrt(_alpha / _beta)
-        street_width = 1000/np.sqrt(_beta) - building_width
-        # complex representation
-        ex = (street_width - building_width) + 1j * (street_width - _gamma) # good
-        complex_repr = np.round(np.arctan2(ex.imag, ex.real), 4)
-        #
-        area_sq_km = (self.sim_x * self.sim_y) / 1e6
-        #
-        for env_idx, value in enumerate(environment_rad):
-            temp = complex_repr.copy()
-            absolute_differences = np.abs(temp - value)
-            # Find the index of the minimum difference
-            closest_index = absolute_differences.argmin()
-            alpha = _alpha[closest_index]
-            beta = _beta[closest_index]
-            gamma = _gamma[closest_index]
-            E = complex_repr[closest_index]
-            #
-            h_map = np.zeros((self.sim_x, self.sim_y), dtype=np.float32)
-            n_buildings = int(beta * area_sq_km)
-            if n_buildings == 0:
-                continue
-            w = int(max(1, building_width[closest_index]))
-            s = int(max(1, street_width[closest_index]))
-            b_x = np.arange(self.map_margin, self.sim_x - w, w + s)
-            b_y = np.arange(self.map_margin, self.sim_y - w, w + s)
-            # b_x = np.arange(self.map_margin, self.sim_x , w + s)
-            # b_y = np.arange(self.map_margin, self.sim_y , w + s)
-            total_slots = len(b_x) * len(b_y)
-            if total_slots > 0:
-                heights = np.random.rayleigh(gamma, size=total_slots)
-                idx = 0
-                for x in b_x:
-                    for y in b_y:
-                        h_map[x:x+w, y:y+w] = heights[idx]
-                        idx += 1
-            self.height_maps[env_idx] = torch.tensor(h_map, 
-                                                     dtype=torch.float32, 
-                                                     device=self.device)
-            self.info[env_idx] = torch.tensor([alpha, 
-                                               beta, 
-                                               gamma, 
-                                               E, 
-                                               n_buildings, 
-                                               w, 
-                                               s], 
-                                              dtype=torch.float32, 
-                                              device=self.device)
+    
         
     def reset(self, return_urban_info: bool = False):
         """
@@ -225,6 +170,7 @@ class VectorizedUrbanMap:
          s) = self.info[env_idx]
         gamma = gamma.cpu().numpy()
         n_buildings = int(n_buildings)
+        building_data = []
         w = int(w)
         s = int(s)
         h_map = self.height_maps[env_idx].cpu().numpy()
@@ -238,8 +184,14 @@ class VectorizedUrbanMap:
             for x in b_x:
                 for y in b_y:
                     h_map[x:x+w, y:y+w] = heights[idx]
+                    building_info = {
+                        "position": [x+self.x_min, y+self.y_min, 0],
+                        "size": [w, w, heights[idx]]
+                    }
+                    building_data.append(building_info)
                     idx += 1
         self.height_maps[env_idx] = torch.tensor(h_map, dtype=torch.float32, device=self.device)
+        self.building_data[env_idx] = building_data
         if return_urban_info:
             return {label: self.info[env_idx, i].item() 
                     for i, label in enumerate(self.get_info_labels())} 

@@ -801,75 +801,93 @@ def plot_training_metrics(
 
 def main():
     parser = argparse.ArgumentParser(description='Aggregate and plot BenchMARL metrics.')
-    parser.add_argument('root_dir', help='Root directory containing experiment folders (e.g., outputs/navigate)')
-    parser.add_argument('--output', '-o', default='outputs/plots', help='Directory to save plots (default: ./plots)')
+    parser.add_argument('root_dir', 
+                        help='Root directory containing experiment folders (e.g., outputs/navigate)')
+    parser.add_argument('--output', '-o', 
+                        default='outputs/plots', help='Directory to save plots (default: ./plots)')
     parser.add_argument('--metrics', '-m', nargs='*', help='List of specific metrics to plot (e.g., collection_agents_reward_episode_reward_mean). If not given, plot a default set.')
     args = parser.parse_args()
 
     root_dir = args.root_dir
     output_dir = args.output
+    # png = plot_dir / 'png'
 
     # Step 1: find all experiments
-    experiments = find_experiment_dirs(root_dir)
+    experiments_dir = project_root / "outputs" / scenario
+    plot_dir = project_root / "outputs" / "plots" / scenario
+    os.makedirs(plot_dir, exist_ok=True)
+
+    # draw marl-eval style plots
+    raw_dict = get_raw_dict_from_multirun_folder(
+        multirun_folder=experiments_dir
+    )
+    processed_data = Plotting.process_data(raw_dict)
+    (
+        environment_comparison_matrix,
+        sample_efficiency_matrix,
+    ) = Plotting.create_matrices(processed_data, env_name="urbanmarl")
+    
+    performance_profile_figure = Plotting.performance_profile_figure(
+        environment_comparison_matrix=environment_comparison_matrix
+    )
+    save_path = plot_dir / "performance_profile.pdf"
+    performance_profile_figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+
+    aggregate_scores, d, c = Plotting.aggregate_scores(
+        environment_comparison_matrix=environment_comparison_matrix
+    )
+    save_path = plot_dir / "aggregate_scores.pdf"
+    aggregate_scores.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+    
+    environemnt_sample_efficiency_curves, _, _ = Plotting.environemnt_sample_efficiency_curves(
+        sample_effeciency_matrix=sample_efficiency_matrix
+    )
+    save_path = plot_dir / "environemnt_sample_efficiency_curves.pdf"
+    environemnt_sample_efficiency_curves.figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+    
+    for task in tasks:
+        task_name = task.name.lower()
+        print(f"Generating sample efficiency curves for task: {task_name}")
+        task_sample_efficiency_curves = Plotting.task_sample_efficiency_curves(
+            processed_data=processed_data, env="urbanmarl", task=task_name
+        )
+        save_path = plot_dir / f"task_sample_efficiency_curves_{task.name.lower()}.pdf"
+        task_sample_efficiency_curves.figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+    
+    
+    # draw scallers
+    experiments = find_experiment_dirs(experiments_dir)
     if not experiments:
-        print(f"No experiment directories found in {root_dir}")
-        return
+        print(f"No experiment directories found in {experiments_dir}")
     print(f"Found {len(experiments)} experiment directories.")
-
-    # Step 2: load all metrics
-    # If no specific metrics, we can define a default list of interesting metrics
-    if args.metrics is not None and len(args.metrics) > 0:
-        metrics_of_interest = args.metrics
-    else:
-        # Default: common metrics
-        metrics_of_interest = [
-            'collection_agents_reward_episode_reward_mean',
-            'eval_agents_reward_episode_reward_mean',
-            'collection_reward_episode_reward_mean',
-            'eval_reward_episode_reward_mean',
-            # Add any other metrics you want to plot by default
-            'collection_info_collisions_per_env',
-            'collection_info_velocity',
-            # 'episode_reward_per_env_mean',
-        ]
-
-    all_data = load_all_metrics(experiments, metrics_of_interest)
-    print(f"Loaded data for metrics: {list(all_data.keys())}")
-
-    # Step 3: aggregate per algorithm and per metric
-    # We'll store aggregated results: dict[metric_name][algo] = DataFrame(step, mean, std)
-    aggregated_all = {}
-
-    for metric_name, dfs_list in all_data.items():
-        # Group DataFrames by algorithm
-        algo_groups = defaultdict(list)
-        for df in dfs_list:
-            algo = df['algo'].iloc[0]  # all rows have same algo
-            # For per-env rewards, we might want to further split by env_id
-            if 'env_id' in df.columns:
-                # For simplicity, we treat each (algo, env_id) as separate group
-                # but we can also aggregate across envs. We'll plot env-specific lines.
-                # We'll create a key: algo + '_env' + env_id
-                env_id = df['env_id'].iloc[0]
-                group_key = f"{algo}_env{env_id}"
-                algo_groups[group_key].append(df)
-            else:
-                algo_groups[algo].append(df)
-
-        # Aggregate each group
-        aggregated_for_metric = {}
-        for group_key, group_dfs in algo_groups.items():
-            agg_df = aggregate_runs(group_dfs)
-            if agg_df is not None:
-                aggregated_for_metric[group_key] = agg_df
-
-        if aggregated_for_metric:
-            aggregated_all[metric_name] = aggregated_for_metric
-
-            # Plot this metric
-            plot_metric(metric_name, aggregated_for_metric, output_dir)
-
-    print("Done.")
+    
+    all_data = load_all_metrics(experiments)
+    
+    # draw catalog of metrics
+    # plot_all_metrics(all_data, png)
+    
+    plot_training_metrics(
+        all_data,
+        plot_dir, 
+        figsize = (7, 6),
+        n_cols = 4,
+        pdf=True,
+        fill = False
+    )
+    
+    plot_report(
+        all_data,
+        plot_dir, 
+        figsize = (7, 6),
+        pdf=True
+    )
+    
+    plot_catalogue(
+        all_data,
+        plot_dir, 
+        figsize = (7, 6),
+        pdf=False
+    )
 
 
 if __name__ == '__main__':

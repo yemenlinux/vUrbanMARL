@@ -194,7 +194,8 @@ class UrbanEnvBase(_EnvWrapper):
                         {
                             "action": self.scenario.action_spec(self, group)
                         },
-                    ))
+                    )
+                )
                 observation_specs.append(
                     Composite(
                         {
@@ -209,18 +210,20 @@ class UrbanEnvBase(_EnvWrapper):
                         }
                     )
                 )
-                # info = self.scenario.info_agent_spec(self, group)
-                if self.scenario.has_agent_info:
+                info = self.scenario.info_agent_spec(self, group)
+                if info:
                     info_specs.append(
                         Composite(
-                            self.scenario.info_agent_spec(self, group)
+                            info
                         )
-                        # Composite(
-                        #     {
-                        #         key: spec
-                        #     }
-                        # )
                     )
+                
+                # if self.scenario.has_agent_info:
+                #     info_specs.append(
+                #         Composite(
+                #             self.scenario.info_agent_spec(self, group)
+                #         )
+                #     )
             # Build multi-agent stacked specs
             group_action_spec = torch.stack(action_specs, dim=0)  
             group_observation_spec = torch.stack(observation_specs, dim=0)  
@@ -241,11 +244,17 @@ class UrbanEnvBase(_EnvWrapper):
             self.het_specs = self.het_specs or group_het_specs
 
         # State spec (global CTDE) – can also be scenario-defined, but keep as before
-        if self.scenario.has_state:
-            full_observation_spec_unbatched["state"] = self.scenario.stat_spec(self)
+        global_state_spec = self.scenario.state_spec(self)
+        if global_state_spec is not None:
+            full_observation_spec_unbatched["state"] = global_state_spec
+        # if self.scenario.has_state:
+        #     full_observation_spec_unbatched["state"] = self.scenario.stat_spec(self)
         #
-        if self.scenario.has_global_info:
-            full_observation_spec_unbatched["info"] = self.scenario.info_global_spec(self)
+        global_info_spec = self.scenario.info_global_spec(self)
+        if global_info_spec is not None:
+            full_observation_spec_unbatched["info"] = global_info_spec
+        # if self.scenario.has_global_info:
+        #     full_observation_spec_unbatched["info"] = self.scenario.info_global_spec(self)
         
         full_done_spec_unbatched = Composite(
             {
@@ -296,9 +305,11 @@ class UrbanEnvBase(_EnvWrapper):
             "terminated": self.done.clone(),
             "truncated": self.done.clone(),
         }
-        if self.scenario.has_state:
+        if (self.scenario.has_state 
+            or "state" in self.full_observation_spec_unbatched.keys()):
             source["state"] = self._get_state()
-        if self.scenario.has_global_info:
+        if (self.scenario.has_global_info
+            or "info" in self.full_observation_spec_unbatched.keys()):
             source["info"] = self.scenario.info_global(self)
 
         obs = self._get_obs()
@@ -351,9 +362,11 @@ class UrbanEnvBase(_EnvWrapper):
             "terminated": terminated,
             "truncated": truncated,
         }
-        if self.scenario.has_state:
+        if (self.scenario.has_state 
+            or "state" in self.full_observation_spec_unbatched.keys()):
             source["state"] = self._get_state()
-        if self.scenario.has_global_info:
+        if (self.scenario.has_global_info
+            or "info" in self.full_observation_spec_unbatched.keys()):
             source["info"] = self.scenario.info_global(self)
 
         for group, agent_names in self.group_map.items():
@@ -406,11 +419,11 @@ class UrbanEnvBase(_EnvWrapper):
             batch_size=self.batch_size,
         )
 
-    def read_done(self, done):
-        return _selective_unsqueeze(done, batch_size=self.batch_size)
+    # def read_done(self, done):
+    #     return _selective_unsqueeze(done, batch_size=self.batch_size)
 
-    def read_reward(self, rewards):
-        return _selective_unsqueeze(rewards, batch_size=self.batch_size)
+    # def read_reward(self, rewards):
+    #     return _selective_unsqueeze(rewards, batch_size=self.batch_size)
 
     def info(self, agent):
         # Could be scenario-defined
