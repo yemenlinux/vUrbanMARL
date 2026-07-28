@@ -207,9 +207,9 @@ if __name__ == "__main__":
     # Loads from "benchmarl/conf/task/urbanmarl"
     tasks = [
         # uav_navigation
-        # UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
+        UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
         # UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
-        UrbanEnvTask.COVERAGE.get_from_yaml(),
+        # UrbanEnvTask.COVERAGE.get_from_yaml(),
     ]
 
     # Loads from "benchmarl/conf/model/layers"

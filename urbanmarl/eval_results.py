@@ -5,22 +5,42 @@ eval_results.py - Aggregate, evaluate, and plot BenchMARL CSV metrics.
 Usage:
     python eval_results.py /path/to/outputs/navigate
 """
-
+import sys
 import os
+from pathlib import Path
+
+
+# Add project root to path 
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+
+
 import re
 import argparse
 import glob
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-from pathlib import Path
+
 from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 from scipy.stats import sem
 import seaborn as sns
+
+from datetime import datetime
+from benchmarl.eval_results import (
+    load_and_merge_json_dicts, 
+    Plotting, 
+    get_raw_dict_from_multirun_folder
+)
+
+FIGURE_SIZE = (10, 6)
 
 
 class ExperimentResult:
@@ -127,7 +147,7 @@ def plot_metric(agg_df: pd.DataFrame, metric_name: str, title: str, save_path: P
     if agg_df.empty:
         print(f"No data for {metric_name}")
         return
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=FIGURE_SIZE)
     for algo in agg_df['algorithm'].unique():
         algo_data = agg_df[agg_df['algorithm'] == algo]
         plt.plot(algo_data['step'], algo_data['mean'], label=algo)
@@ -150,15 +170,88 @@ def plot_metric(agg_df: pd.DataFrame, metric_name: str, title: str, save_path: P
 # ----------------------------------------------------------------------
 #  Utility functions
 # ----------------------------------------------------------------------
+def pi_formatter(x, pos):
+    """Dynamically formats axis ticks as multiples of pi from -pi to pi."""
+    # Normalize the value by pi
+    val = x / np.pi
+    
+    # Explicit checks for common angles in [-pi, pi]
+    if val == 0:
+        return r"$0$"
+    elif val == 1:
+        return r"$\pi$"
+    elif val == -1:
+        return r"$-\pi$"
+    elif val == 0.5:
+        return r"$\frac{\pi}{2}$"
+    elif val == -0.5:
+        return r"$-\frac{\pi}{2}$"
+    elif val.is_integer():
+        return rf"${int(val)}\pi$"
+    else:
+        # Fallback for arbitrary fractions
+        from fractions import Fraction
+        frac = Fraction(val).limit_denominator()
+        
+        # Handle the negative sign placement for better LaTeX rendering
+        if frac.numerator < 0:
+            if frac.numerator == -1:
+                return rf"$-\frac{{\pi}}{{{frac.denominator}}}$"
+            else:
+                return rf"$-\frac{{{-frac.numerator}\pi}}{{{frac.denominator}}}$"
+        else:
+            if frac.numerator == 1:
+                return rf"$-\frac{{\pi}}{{{frac.denominator}}}$"
+            else:
+                return rf"$\frac{{{frac.numerator}\pi}}{{{frac.denominator}}}$"
 
+def parse_experiment_folder_name(folder_path: str | Path) -> dict:
+    folder_str = Path(folder_path).name
+    
+    # Split primary configuration from execution metadata
+    parts = folder_str.split("__")
+    if len(parts) != 2:
+        raise ValueError(f"Invalid BenchMARL folder structure: {folder_str}")
+    
+    config_str, run_meta_str = parts[0], parts[1]
+    
+    # Extract Algorithm, Task, and Model
+    config_tokens = config_str.split("_")
+    algorithm = config_tokens[0]
+    model = config_tokens[-1]
+    task = "_".join(config_tokens[1:-1])
+    
+    # Extract Hash and Timestamp
+    run_meta_tokens = run_meta_str.split("_", 1)
+    exp_hash = run_meta_tokens[0]
+    timestamp_str = run_meta_tokens[1]
+    
+    # Parse standard date object
+    dt = datetime.strptime(timestamp_str, "%y_%m_%d-%H_%M_%S")
+    
+    return {
+        "algorithm": algorithm,
+        "task": task,
+        "model": model,
+        "hash": exp_hash,
+        "datetime": dt,
+        "timestamp_raw": timestamp_str
+    }
+
+# 1
 def find_experiment_dirs(root_dir):
     """
     Locate all experiment directories under root_dir.
     Each experiment is a folder like: iddpg_navigate_mlp__4cb37893_26_06_21-22_04_23
     Returns a list of dicts with keys:
+        - algorithm : algorithm name (e.g., iddpg, ippo, mappo)
         - path   : full path to the experiment folder
         - name   : folder name
-        - algo   : algorithm name (first part before '_')
+        - task   : task name (e.g., uav_navigate)
+        - model  : model name (e.g., mlp)
+        - hash   : unique hash for the run
+        - datetime : datetime object parsed from the timestamp
+        - timestamp_raw : raw timestamp string
     """
     experiments = []
     # The top-level folders are directly under root_dir
@@ -166,12 +259,13 @@ def find_experiment_dirs(root_dir):
         exp_path = os.path.join(root_dir, f)
         if os.path.isdir(exp_path):
             # Extract algorithm name (e.g., "iddpg" from "iddpg_navigate_mlp__...")
-            algo = f.split('_')[0] if '_' in f else f
-            experiments.append({
+            # algo = f.split('_')[0] if '_' in f else f
+            info = parse_experiment_folder_name(exp_path)
+            info.update({
                 'path': exp_path,
                 'name': f,
-                'algo': algo
             })
+            experiments.append(info)
     return experiments
 
 
@@ -194,8 +288,6 @@ def get_scalars_dir(exp_info):
             return None
 
 
-
-    
 def parse_metric_from_filename(filename):
     """
     Determine metric name and optional environment id from a CSV filename.
@@ -238,11 +330,7 @@ def parse_metric_from_filename(filename):
             ex = (street_width - building_width) + 1j * (street_width - gamma)
             E = np.round(np.arctan2(ex.imag, ex.real), 4)
         return metric, E
-        
-        # Use beta as environment id
-        # env_id = int(beta)
-        # metric_name = f"rwd_env_{env_id}"
-        # return metric_name, env_id
+        # 
     else:
         # Standard metric
         return base, None
@@ -271,7 +359,7 @@ def load_all_metrics(experiments, metrics_of_interest=None):
 
     Returns a dictionary:
         key : metric name (str) 
-        value : list of DataFrames, each with columns ['step', 'value', 'exp_name', 'algo']
+        value : list of DataFrames, each with columns ['step', 'value', 'exp_name', 'algorithm']
     """
     data = defaultdict(list)
 
@@ -296,13 +384,16 @@ def load_all_metrics(experiments, metrics_of_interest=None):
                 continue
             # Add experiment info
             df['exp_name'] = exp['name']
-            df['algo'] = exp['algo']
+            df['algorithm'] = exp['algorithm']
+            df['task'] = exp['task']
+            df['model'] = exp['model']
+            # df['hash'] = exp['hash']
+            # df['datetime'] = exp['datetime']
+            # df['timestamp_raw'] = exp['timestamp_raw']
             # For per-env rewards, store env_id as an extra column
             if env_id is not None:
                 df['env_id'] = env_id
-
             data[metric_name].append(df)
-
     return data
 
 
@@ -403,7 +494,7 @@ def plot_metric_by_envs(
         print(f"No data to plot for metric: {metric_name}")
         return
 
-    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={'projection': 'polar'})
+    fig, ax = plt.subplots(figsize=FIGURE_SIZE, subplot_kw={'projection': 'polar'})
     # plt.figure(figsize=(10, 6), projection='polar')
     for algo, df in aggregated_dict.items():
         if df is None:
@@ -445,7 +536,7 @@ def plot_metric(
         print(f"No data to plot for metric: {metric_name}")
         return
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=FIGURE_SIZE)
     for algo, df in aggregated_dict.items():
         if df is None:
             continue
@@ -482,7 +573,7 @@ def metric_labels(
     info_metrics = ['reward', 'los', 'collisions', 'velocity']
 ):
     if metric_name in info_metrics:
-        x_label = 'E'
+        x_label = r"$\mathcal{E}$"
         title = f"{metric_name} per Urban Environements".title()
     else:
         x_label = 'Episode'
@@ -507,11 +598,15 @@ def plot_all_metrics(
         con_df = pd.concat(dictionary[metric])
         #
         if 'env_id' in con_df.columns:
-            fig, ax = plt.subplots(subplot_kw=dict(projection="polar"), figsize=(8, 6))  
+            fig, ax = plt.subplots(subplot_kw=dict(projection="polar"), figsize=FIGURE_SIZE)  
+            ax.set_xlim(-np.pi, np.pi)
+            ax.xaxis.set_major_formatter(ticker.FuncFormatter(pi_formatter))
+            ax.set_rlabel_position(45)
+            ax.yaxis.set_label_coords(0.5, 0.6)
         else:
-            fig, ax = plt.subplots(figsize=(8, 6))  
-        for algo in con_df.algo.unique():
-            _df = con_df.loc[con_df['algo'] == algo]
+            fig, ax = plt.subplots(figsize=FIGURE_SIZE)  
+        for algo in con_df.algorithm.unique():
+            _df = con_df.loc[con_df['algorithm'] == algo]
             if 'env_id' in _df.columns:
                 # 
                 x_label = 'env_id'
@@ -558,7 +653,7 @@ def plot_all_metrics(
                 save_path = os.path.join(output_dir, f'{metric}.pdf')
             else:
                 save_path = os.path.join(output_dir, f'{metric}.png')
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Saved plot: {save_path}")
         else:
             plt.show()
@@ -566,12 +661,12 @@ def plot_all_metrics(
         
 def plot_group_metrics(
     dictionary: Dict,
-    output_dir, 
+    output_dir = None, 
     metric_list= [],
     n_cols = 2,
     projection = 'cartesian',
     file_name = 'compare_metrics',
-    figsize = (7, 6),
+    figsize = FIGURE_SIZE,
     pdf=False,
     fill = True
 ):
@@ -591,11 +686,16 @@ def plot_group_metrics(
     for idx, metric in enumerate(metric_list):
         row, col = divmod(idx, n_cols)
         ax = axes[row, col]
+        if projection.lower() == 'polar':
+            ax.set_xlim(-np.pi, np.pi)
+            ax.xaxis.set_major_formatter(ticker.FuncFormatter(pi_formatter))
+            ax.set_rlabel_position(45)
+            ax.yaxis.set_label_coords(0.5, 0.6)
         #
         con_df = pd.concat(dictionary[metric])
         #
-        for algo in con_df.algo.unique():
-            _df = con_df.loc[con_df['algo'] == algo]
+        for algo in sorted(list(con_df.algorithm.unique())):
+            _df = con_df.loc[con_df['algorithm'] == algo]
             if 'env_id' in _df.columns:
                 # 
                 x_label = 'env_id'
@@ -640,9 +740,6 @@ def plot_group_metrics(
         ax.grid(True, alpha=0.3)
         ax.legend()
     #
-    # plt.legend()
-    # plt.grid(True, alpha=0.3)
-    # 
     # Save
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
@@ -650,7 +747,100 @@ def plot_group_metrics(
             save_path = os.path.join(output_dir, f'{file_name}.pdf')
         else:
             save_path = os.path.join(output_dir, f'{file_name}.png')
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved plot: {save_path}")
+    else:
+        plt.show()
+    plt.close()
+
+def plot_group_tasks(
+    dictionary: Dict,
+    metric,
+    output_dir = None, 
+    n_cols = 3,
+    projection = 'cartesian',
+    file_name = 'compare_metrics',
+    figsize = FIGURE_SIZE,
+    pdf=False,
+    fill = True
+):
+    con_df = pd.concat(dictionary[metric])
+    n_tasks = len(list(con_df.task.unique()))
+    if n_tasks < 4:
+        n_cols = n_tasks
+    #
+    n_rows = (n_tasks + n_cols - 1) // n_cols
+    if projection.lower() == 'polar':
+        fig, axes = plt.subplots(n_rows, n_cols, 
+                                 subplot_kw={'projection': 'polar'},
+                                 figsize=(figsize[0]*n_cols, figsize[1]*n_rows+1),
+                                 squeeze=False)
+    else:
+        fig, axes = plt.subplots(n_rows, n_cols, 
+                                 # subplot_kw={'projection': 'polar'},
+                                 figsize=(figsize[0]*n_cols, figsize[1]*n_rows),
+                                 squeeze=False)
+    
+    for idx, task in enumerate(sorted(list(con_df.task.unique()))):
+        row, col = divmod(idx, n_cols)
+        ax = axes[row, col]
+        if projection.lower() == 'polar':
+            ax.set_xlim(-np.pi, np.pi)
+            ax.xaxis.set_major_formatter(ticker.FuncFormatter(pi_formatter))
+            ax.set_rlabel_position(45)
+            ax.yaxis.set_label_coords(0.5, 0.6)
+        #
+        _con_df = con_df.loc[con_df['task'] == task]
+        #
+        for algo in sorted(list(_con_df.algorithm.unique())):
+            _df = _con_df.loc[_con_df['algorithm'] == algo]
+            if 'env_id' in _df.columns:
+                # 
+                x_label = 'env_id'
+                df = _df.groupby([x_label])[['value']].agg(percentile_95)
+                # df = _df.groupby(['env_id'])[['value']].agg(['max'])
+                df.reset_index(inplace=True)
+                df.columns = [x_label, 'mean']
+                df['std'] = df['mean'].std()
+                E = df[x_label]
+                metric_mean = df['mean'] 
+                metric_std = df['std'] 
+                # 
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                if fill:
+                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+            else:
+                x_label = 'step'
+                df = _df.groupby([x_label])[['value']].agg(percentile_95)
+                # df = df.groupby(['env_id'])[['value']].agg(['max'])
+                df.reset_index(inplace=True)
+                df.columns = [x_label, 'mean']
+                df['std'] = df['mean'].std()
+                E = df[x_label]
+                metric_mean = df['mean'] 
+                metric_std = df['std'] 
+                #
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                if fill:
+                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+            
+        #
+        x_label, y_label, title = metric_labels(metric)
+        title = f"{title} - {task.upper()}"
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_title(title)
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+    #
+    # Save
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        if pdf:
+            save_path = os.path.join(output_dir, f'{file_name}.pdf')
+        else:
+            save_path = os.path.join(output_dir, f'{file_name}.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Saved plot: {save_path}")
     else:
         plt.show()
@@ -659,7 +849,7 @@ def plot_group_metrics(
 def plot_catalogue(
     dictionary: Dict,
     output_dir, 
-    figsize = (7, 6),
+    figsize = FIGURE_SIZE,
     pdf=False,
     fill = True
 ):
@@ -701,61 +891,10 @@ def plot_catalogue(
         pdf=pdf
     )
 
-def plot_report(
-    dictionary: Dict,
-    output_dir, 
-    figsize = (7, 6),
-    pdf=True,
-    fill = True
-):
-    # draw all metrics
-    info_metrics = [
-        'los',
-        'collisions',
-        'velocity',
-        'reward',
-    ]
-    new_dict = {metric: dfs for metric, dfs in dictionary.items() if metric in info_metrics}
-    plot_all_metrics(new_dict, output_dir, pdf=pdf)
-    # plot groups
-    time_metrics = [
-        'timers_collection_time',
-        'timers_training_time',
-        'timers_evaluation_time',
-        'timers_iteration_time',
-    ]
-    plot_group_metrics(
-        dictionary,
-        output_dir, 
-        metric_list= time_metrics,
-        n_cols = 2,
-        projection = 'cartesian',
-        file_name = 'grouped_timers',
-        figsize = figsize,
-        pdf=pdf
-    )
-    #
-    info_metrics = [
-        'los',
-        'collisions',
-        'velocity',
-        'reward',
-    ]
-    plot_group_metrics(
-        dictionary,
-        output_dir, 
-        metric_list= info_metrics,
-        n_cols = 2,
-        projection = 'polar',
-        file_name = 'grouped_info_metrics',
-        figsize = figsize,
-        pdf=pdf
-    )
-
 def plot_training_metrics(
     dictionary: Dict,
     output_dir, 
-    figsize = (7, 6),
+    figsize = FIGURE_SIZE,
     n_cols = 3,
     pdf=True,
     fill = False
@@ -799,23 +938,99 @@ def plot_training_metrics(
     )
 
 
+def plot_report(
+    dictionary: Dict,
+    output_dir, 
+    figsize = FIGURE_SIZE,
+    pdf=True,
+    fill = True
+):
+    # draw all metrics
+    info_metrics = [
+        'los',
+        'collisions',
+        'velocity',
+        'reward',
+    ]
+    new_dict = {metric: dfs for metric, dfs in dictionary.items() if metric in info_metrics}
+    plot_all_metrics(new_dict, output_dir, pdf=pdf)
+    # plot groups per task
+    for metric in info_metrics:
+        plot_group_tasks(
+            dictionary,
+            metric=metric,
+            output_dir=output_dir, 
+            n_cols = 3,
+            projection = 'polar',
+            file_name = f'grouped_{metric}_per_task',
+            figsize = figsize,
+            pdf=pdf
+        )
+    # plot groups
+    time_metrics = [
+        'timers_collection_time',
+        'timers_training_time',
+        'timers_evaluation_time',
+        'timers_iteration_time',
+    ]
+    plot_group_metrics(
+        dictionary,
+        output_dir, 
+        metric_list= time_metrics,
+        n_cols = 2,
+        projection = 'cartesian',
+        file_name = 'grouped_timers',
+        figsize = figsize,
+        pdf=pdf
+    )
+    # plot groups per task
+    for metric in time_metrics:
+        plot_group_tasks(
+            dictionary,
+            metric=metric,
+            output_dir=output_dir, 
+            n_cols = 3,
+            projection = 'cartesian',
+            file_name = f'grouped_{metric}_per_task',
+            figsize = figsize,
+            pdf=pdf
+        )
+    #
+    info_metrics = [
+        'los',
+        'collisions',
+        'velocity',
+        'reward',
+    ]
+    plot_group_metrics(
+        dictionary,
+        output_dir, 
+        metric_list= info_metrics,
+        n_cols = 2,
+        projection = 'polar',
+        file_name = 'grouped_info_metrics',
+        figsize = figsize,
+        pdf=pdf
+    )
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='Aggregate and plot BenchMARL metrics.')
-    parser.add_argument('root_dir', 
-                        help='Root directory containing experiment folders (e.g., outputs/navigate)')
+    parser.add_argument('--root_dir',
+                        default='outputs/experiments',
+                        help='Root directory containing experiment folders (e.g., outputs/experiments)')
     parser.add_argument('--output', '-o', 
                         default='outputs/plots', help='Directory to save plots (default: ./plots)')
     parser.add_argument('--metrics', '-m', nargs='*', help='List of specific metrics to plot (e.g., collection_agents_reward_episode_reward_mean). If not given, plot a default set.')
     args = parser.parse_args()
 
-    root_dir = args.root_dir
-    output_dir = args.output
-    # png = plot_dir / 'png'
-
-    # Step 1: find all experiments
-    experiments_dir = project_root / "outputs" / scenario
-    plot_dir = project_root / "outputs" / "plots" / scenario
-    os.makedirs(plot_dir, exist_ok=True)
+    root_dir = Path(args.root_dir)
+    if not root_dir.exists():
+        print(f"Error: Root directory {root_dir} does not exist.")
+        return
+    experiments_dir = project_root / root_dir
+    plot_dir = project_root / args.output
 
     # draw marl-eval style plots
     raw_dict = get_raw_dict_from_multirun_folder(
@@ -845,15 +1060,14 @@ def main():
     save_path = plot_dir / "environemnt_sample_efficiency_curves.pdf"
     environemnt_sample_efficiency_curves.figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
     
-    for task in tasks:
-        task_name = task.name.lower()
-        print(f"Generating sample efficiency curves for task: {task_name}")
+    for task in processed_data['urbanmarl'].keys():
         task_sample_efficiency_curves = Plotting.task_sample_efficiency_curves(
-            processed_data=processed_data, env="urbanmarl", task=task_name
+            processed_data=processed_data, env="urbanmarl", task=task
         )
-        save_path = plot_dir / f"task_sample_efficiency_curves_{task.name.lower()}.pdf"
+        #
+        save_path = plot_dir / f"{task}_sample_efficiency_curves.pdf"
+        # task_sample_efficiency_curves.set_title(f"{task.upper()} Sample Efficiency", fontsize=16)
         task_sample_efficiency_curves.figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
-    
     
     # draw scallers
     experiments = find_experiment_dirs(experiments_dir)
@@ -865,11 +1079,17 @@ def main():
     
     # draw catalog of metrics
     # plot_all_metrics(all_data, png)
+    plot_catalogue(
+        all_data,
+        plot_dir, 
+        figsize = FIGURE_SIZE,
+        pdf=False
+    )
     
     plot_training_metrics(
         all_data,
         plot_dir, 
-        figsize = (7, 6),
+        figsize = FIGURE_SIZE,
         n_cols = 4,
         pdf=True,
         fill = False
@@ -878,16 +1098,11 @@ def main():
     plot_report(
         all_data,
         plot_dir, 
-        figsize = (7, 6),
+        figsize = FIGURE_SIZE,
         pdf=True
     )
     
-    plot_catalogue(
-        all_data,
-        plot_dir, 
-        figsize = (7, 6),
-        pdf=False
-    )
+    
 
 
 if __name__ == '__main__':
