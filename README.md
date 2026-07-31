@@ -10,7 +10,7 @@
 
 Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, vUrbanMARL vectorizes 3D spatial ray-casting, ITU-R P.1410 urban map procedural generation, mmWave radio propagation, and M/M/c queuing dynamics across thousands of concurrent environments.
 
-![Project Demo Video](docs/resources/eval_video_49.mp4)
+[![Watch the video](docs/resources/eval_video.png)](https://youtu.be/o-M2GwV5U_Q)
 ---
 
 ## 💡 Key Features
@@ -80,7 +80,7 @@ Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, v
     pip install -r requirements/cuda126.txt
     ```
 
-    For GPU installation (CUDA 13.0 - recommended for old GPUs):
+    For GPU installation (CUDA 13.0 - recommended for new GPUs):
 
     ```bash
     pip install -r requirements/cuda130.txt
