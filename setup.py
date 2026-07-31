@@ -8,9 +8,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         "torch>=2.2.0",
-        "torchrl>=0.3.0",
+        "torchrl>=0.13.3",
         "tensordict>=0.3.0",
-        "benchmarl>=1.2.0",
+        "benchmarl @ git+https://github.com/yemenlinux/BenchMARL.git",
         "hydra-core>=1.3.2"
     ],
     python_requires=">=3.9",

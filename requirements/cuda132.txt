@@ -1,0 +1,6 @@
+# Torch for CUDA 13.2 (for new Nvidia GPUs) 
+-r base.txt
+torch  --index-url https://download.pytorch.org/whl/cu132
+torchvision  --index-url https://download.pytorch.org/whl/cu132
+torchcodec  --index-url https://download.pytorch.org/whl/cu132
+ 

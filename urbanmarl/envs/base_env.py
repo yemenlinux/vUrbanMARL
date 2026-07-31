@@ -37,7 +37,7 @@ from urbanmarl.scenarios import load_scenario, UrbanScenario
 _has_urbanmarl = importlib.util.find_spec("urbanmarl") is not None
 
 class UrbanEnvBase(_EnvWrapper):
-    git_url = "https://github.com/yemenlinux/MultiAgent3DUrbanSimulator"
+    git_url = "https://github.com/yemenlinux/vUrbanMARL.git"
     libname = "urbanmarl"
 
     @property

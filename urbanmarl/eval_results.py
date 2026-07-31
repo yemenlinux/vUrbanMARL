@@ -40,7 +40,7 @@ from benchmarl.eval_results import (
     get_raw_dict_from_multirun_folder
 )
 
-FIGURE_SIZE = (10, 6)
+FIGURE_SIZE = (7, 6)
 
 
 class ExperimentResult:
@@ -1017,21 +1017,22 @@ def plot_report(
 
 def main():
     parser = argparse.ArgumentParser(description='Aggregate and plot BenchMARL metrics.')
-    parser.add_argument('--root_dir',
-                        default='outputs/experiments',
+    parser.add_argument('--exp_dir', '-e',
+                        default='experiments',
                         help='Root directory containing experiment folders (e.g., outputs/experiments)')
     parser.add_argument('--output', '-o', 
-                        default='outputs/plots', help='Directory to save plots (default: ./plots)')
+                        default='plots', help='Directory to save plots (default: ./plots)')
     parser.add_argument('--metrics', '-m', nargs='*', help='List of specific metrics to plot (e.g., collection_agents_reward_episode_reward_mean). If not given, plot a default set.')
     args = parser.parse_args()
 
-    root_dir = Path(args.root_dir)
-    if not root_dir.exists():
-        print(f"Error: Root directory {root_dir} does not exist.")
+    experiments_dir = project_root / "outputs" / args.exp_dir
+    plot_dir = project_root / "outputs" / args.output / args.exp_dir
+    #
+    if not experiments_dir.exists():
+        print(f"Error: Experiment directory {experiments_dir} does not exist.")
         return
-    experiments_dir = project_root / root_dir
-    plot_dir = project_root / args.output
-
+    #
+    os.makedirs(plot_dir, exist_ok=True)
     # draw marl-eval style plots
     raw_dict = get_raw_dict_from_multirun_folder(
         multirun_folder=experiments_dir

@@ -1,0 +1,5 @@
+# Torch for CUDA 13.0 
+-r base.txt
+torch
+torchvision
+torchcodec
