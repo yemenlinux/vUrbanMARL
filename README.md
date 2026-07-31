@@ -10,7 +10,8 @@
 
 Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, vUrbanMARL vectorizes 3D spatial ray-casting, ITU-R P.1410 urban map procedural generation, mmWave radio propagation, and M/M/c queuing dynamics across thousands of concurrent environments.
 
-[![Watch the video](docs/resources/eval_video.png)](https://youtu.be/o-M2GwV5U_Q)
+[![Watch the video](https://img.youtube.com/vi/o-M2GwV5U_Q/maxresdefault.jpg)](https://www.youtube.com/watch?v=o-M2GwV5U_Q)
+
 ---
 
 ## 💡 Key Features
