@@ -42,8 +42,7 @@ class VectorizedUrbanMap:
         #                         dtype=torch.float32, device=device)
         self.has_envs = False
         
-        
-    def get_info_lables(self):
+    def get_info_labels(self):
         return ['alpha', 
                 'beta', 
                 'gamma', 
@@ -51,7 +50,30 @@ class VectorizedUrbanMap:
                 'n_buildings', 
                 'building_width', 
                 'street_width']
-        
+    
+    def create_building_faces(
+        self,
+        building: dict,
+    ) -> list:
+        """creates the faces of a building cuboid for 3D plotting"""
+        x, y, z = building['position']
+        w, l, h = building['size']
+        # Cuboid vertices
+        vertices = np.array([
+            [x, y, z], [x+w, y, z], [x+w, y+l, z], [x, y+l, z],      # bottom
+            [x, y, z+h], [x+w, y, z+h], [x+w, y+l, z+h], [x, y+l, z+h]  # top
+        ])
+        # Faces
+        faces = [
+            [vertices[0], vertices[1], vertices[5], vertices[4]],  # front
+            [vertices[1], vertices[2], vertices[6], vertices[5]],  # right
+            [vertices[2], vertices[3], vertices[7], vertices[6]],  # back
+            [vertices[3], vertices[0], vertices[4], vertices[7]],  # left
+            [vertices[4], vertices[5], vertices[6], vertices[7]],  # top
+        ]
+        #
+        return faces
+    
     def _build_ITU_P1410_maps(
         self, 
         num_urbans: int = 72,
@@ -65,6 +87,7 @@ class VectorizedUrbanMap:
             num_urbans = self.batch_size
         # buildings
         self.building_data = []
+        self.building_faces = []
         # Create a local RNG with the given seed
         rng = np.random.RandomState(seed)
         #
@@ -98,6 +121,7 @@ class VectorizedUrbanMap:
             if n_buildings == 0:
                 continue
             building_data = []
+            building_faces = []
             w = int(max(1, building_width[closest_index]))
             s = int(max(1, street_width[closest_index]))
             b_x = np.arange(self.map_margin, self.sim_x - w, w + s)
@@ -116,6 +140,7 @@ class VectorizedUrbanMap:
                             "size": [w, w, heights[idx]]
                         }
                         building_data.append(building_info)
+                        building_faces.extend(self.create_building_faces(building_info))
                         idx += 1
             self.height_maps[env_idx] = torch.tensor(h_map, 
                                                      dtype=torch.float32, 
@@ -130,10 +155,9 @@ class VectorizedUrbanMap:
                                               dtype=torch.float32, 
                                               device=self.device)
             self.building_data.append(building_data)
-        
+            self.building_faces.append(building_faces)
         
     
-        
     def reset(self, return_urban_info: bool = False):
         """
         Resets the map environment by regenerating the height maps with new procedural parameters.
@@ -171,6 +195,7 @@ class VectorizedUrbanMap:
         gamma = gamma.cpu().numpy()
         n_buildings = int(n_buildings)
         building_data = []
+        building_faces = []
         w = int(w)
         s = int(s)
         h_map = self.height_maps[env_idx].cpu().numpy()
@@ -189,12 +214,35 @@ class VectorizedUrbanMap:
                         "size": [w, w, heights[idx]]
                     }
                     building_data.append(building_info)
+                    building_faces.extend(self.create_building_faces(building_info))
                     idx += 1
         self.height_maps[env_idx] = torch.tensor(h_map, dtype=torch.float32, device=self.device)
         self.building_data[env_idx] = building_data
+        self.building_faces[env_idx] = building_faces
         if return_urban_info:
             return {label: self.info[env_idx, i].item() 
                     for i, label in enumerate(self.get_info_labels())} 
+    
+    def get_building_polygon(
+        self,
+        urban_idx: int, 
+        face_color: str = '#696969',  # gray '#A9A9A9'
+        alpha: float = 0.3
+    ):
+        """
+        Creates a Poly3DCollection for 3D plotting of building faces.
+        Args:
+            urban_idx (int): Index of the urban environment.
+            face_color (str): Color of the building faces.
+            alpha (float): Transparency level of the building faces.
+        """
+        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+        return Poly3DCollection(
+            self.building_faces[urban_idx],
+            alpha=alpha,
+            facecolor=face_color,
+            edgecolor='black', 
+            linewidth=0.5)
     
     def generate_batch_maps(
         self, 

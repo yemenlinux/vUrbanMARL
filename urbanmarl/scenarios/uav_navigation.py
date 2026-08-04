@@ -6,7 +6,7 @@ class Scenario(UrbanScenario):
     """Scenario name: UAV_NAVIGATION
     
     Objective: 
-    We assume that multi-UAV assests base stations to improve the coverage
+    We assume that multi-UAV assest base stations to improve the coverage
     of a wireless network. A reward function based on line of sight ratio and collision penality
     is designed to encourage the UAV agents to navigate the simulation 3D volume space 
     to maximize the return value.
@@ -260,8 +260,11 @@ class Scenario(UrbanScenario):
         ue_positions = env.ue_user_pos[self.render_idx].cpu()
         los = env.uav_ue_los[self.render_idx]
         los_links = []
+        collisions = []
         if hasattr(env, "uav_ue_los"):
             for uav in range(env.n_uavs):
+                if hasattr(env, "uav_collisions") and env.uav_collisions[self.render_idx, uav]:
+                    collisions.append(uav_positions[uav])
                 for ue in range(env.n_ues):
                     los_links.append({
                         'source': uav_positions[uav], 
@@ -273,6 +276,7 @@ class Scenario(UrbanScenario):
             'uav_positions': uav_positions,
             'ue_positions': ue_positions,
             'links': los_links,
+            'collisions': collisions
         }
         return ndt
 

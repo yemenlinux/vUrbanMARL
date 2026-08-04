@@ -1,5 +1,10 @@
 # Torch for CUDA 12.6 (for old Nvidia GPUs) 
+--extra-index-url https://download.pytorch.org/whl/cu126
+
 -r base.txt
-torch --index-url https://download.pytorch.org/whl/cu126
-torchvision --index-url https://download.pytorch.org/whl/cu126
-torchcodec --index-url https://download.pytorch.org/whl/cu126
+
+torch>=2.12.0 #--index-url https://download.pytorch.org/whl/cu126
+torchvision>=0.17.0 #--index-url https://download.pytorch.org/whl/cu126
+torchcodec>=0.15.0 #--index-url https://download.pytorch.org/whl/cu126
+# torchrl>=0.13.3 #--index-url https://download.pytorch.org/whl/cu126
+

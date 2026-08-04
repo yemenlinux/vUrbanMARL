@@ -44,7 +44,10 @@ class UrbanEnvClass(TaskClass):
         Called at every step during evaluation to provide 
         pixels for video logging.
         """
-        img = env.scenario.render(env, mode='rgb_array')
+        img = env.scenario.render(
+            env,
+            algorithm=experiment.algorithm_name,
+            mode='rgb_array')
         # img_tensor = torch.from_numpy(img).permute(2, 0, 1)  # (H,W,3) -> (3,H,W)
         return img
 

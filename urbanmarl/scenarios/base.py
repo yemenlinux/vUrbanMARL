@@ -172,12 +172,14 @@ class UrbanScenario(ABC):
     # rendering / visualization
     def render(
         self, 
-        env, 
+        env,
+        algorithm: str = "random",
         mode = 'rgb_array'
     ):
         """Render UrbanMARL
         Args:
             env (UrbanEnv): urbanMARL environment
+            algorithm (str): The algorithm name for labeling the render.
             mode (str, optional): The rendering mode.
                 Available modes are 'rgb_array' and 'human'.
                 Defaults to 'rgb_array'.
@@ -226,18 +228,19 @@ class UrbanScenario(ABC):
         """
         if not hasattr(self, 'renderer'):
             self.renderer = Urban3DRenderer()
-        else:
-            self.renderer._init_plot(env.volume_size)
         #
         if not hasattr(self, 'render_idx'):
             self.render_idx = np.random.randint(env.batch_size[0])
         #
         alpha, beta, gamma, e = env._env.info[self.render_idx][:4]
         scenario_name = env.scenario_name.upper()
-        title = f"UrbanMARL - {scenario_name} - ({alpha:.2f}, {beta}, {gamma:.2f}, {e:.4f})"
+        title = f"UrbanMARL - {scenario_name} - {algorithm.upper()} - ({alpha:.2f}, {beta}, {gamma:.2f}, {e:.4f})"
         state = {
             'volume_size': env.volume_size,
+            'current_frame': env.current_step[self.render_idx],
             'buildings': env._env.building_data[self.render_idx],
+            'building_faces': env._env.building_faces[self.render_idx],
+            'heatmap': env._env.height_maps[self.render_idx],
             'title': title
         }
         #

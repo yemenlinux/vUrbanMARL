@@ -29,10 +29,11 @@ Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, v
 
 | Scenario Name | Description | Agent Action Space | Observation Space |
 | :--- | :--- | :--- | :--- |
-| `uav_navigation` | UAVs navigate 3D urban space to maximize LoS user coverage while avoiding building collisions. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
-| `uavmec_offloading` | Joint UAV trajectory control, power allocation, and MEC offloading to balance latency and energy consumption. | Continuous velocity & transmit power | UAV Position, Battery, UE distances & channel state |
-| `coverage` | Multi-UAV spatial coverage maximization over dense ground mobile users in complex topographies. | Continuous 3D movement delta | UAV state, neighbor positions, local coverage map |
-| `uav_ue_los` | Line-of-sight tracking and link maintenance for high-altitude platform stations and UAV relays. | Continuous 3D movement | Relative positions & line-of-sight states |
+| `uav_navigation` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to improve the coverage by navigating the simulation volume to find the best positions. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
+| `uav_ue_los` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to maximize the Line-of-sight status with ground IoTs/users for high-altitude platform stations and UAV relays. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
+| `coverage` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to maximize the spatial coverage. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
+| `uavmec_offloading` | Multi-UAV assest MEC-enabled 5G+/6G wireless network independently/cooperatively learn to optimize latency and energy consumption. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
+
 
 ---
 

@@ -256,7 +256,8 @@ class Logger:
                             )
                     # End of check
 
-                    logger.log_video("eval_video", vid, step=step)
+                    # logger.log_video("eval_video", vid step=step)
+                    logger.log_video("eval_video", vid, fps=20, step=step)
 
     def commit(self):
         for logger in self.loggers:
