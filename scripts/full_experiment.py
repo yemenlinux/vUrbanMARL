@@ -39,8 +39,8 @@ from benchmarl.algorithms import (
     # Discrete only
     #QmixConfig
 )
-from benchmarl.benchmark import Benchmark
-# from benchmarl.environments import VmasTask
+# from benchmarl.benchmark import Benchmark
+
 from benchmarl.experiment import Experiment, ExperimentConfig
 from benchmarl.models.mlp import MlpConfig
 
@@ -96,7 +96,7 @@ def config_experiment(
         experiment_config.device = "cuda"
         experiment_config.sampling_device = "cuda"
         experiment_config.train_device = "cuda"
-        experiment_config.buffer_device = "cuda"
+        # experiment_config.buffer_device = "cuda"
         
     # In case of non-vectorized environments, whether to run collection of multiple processes
     # If this is used, there will be n_envs_per_worker processes, collecting frames_per_batch/n_envs_per_worker frames each
@@ -122,6 +122,9 @@ def config_experiment(
     # Otherwise batching will be simulated and each env will be run sequentially or parallelly depending on parallel_collection.
     experiment_config.off_policy_n_envs_per_worker = num_envs
     # 
+    # whether to use priorities while sampling from the replay buffer
+    experiment_config.off_policy_use_prioritized_replay_buffer = True
+    #
     # experiment_config.evaluation = True
     # Whether to render the evaluation (if rendering is available)
     # experiment_config.render = True
@@ -158,7 +161,7 @@ def config_experiment(
     # Set it to 0 to disable checkpointing
     experiment_config.checkpoint_interval = 0 #int(2 * num_envs * max_n_steps)
     # Whether to checkpoint when the experiment is done
-    experiment_config.checkpoint_at_end = False #True
+    experiment_config.checkpoint_at_end = True
     # How many checkpoints to keep. As new checkpoints are taken, temporally older checkpoints are deleted to keep this number of
     # checkpoints. The checkpoint at the end is included in this number. Set to `null` to keep all checkpoints.
     # experiment_config.keep_checkpoints_num = 3
@@ -169,18 +172,20 @@ def config_experiment(
 _algorithm_configs = [
     # On-policy algorithms
     MappoConfig.get_from_yaml(),
-    MaddpgConfig.get_from_yaml(),
-    MasacConfig.get_from_yaml(),
+    IppoConfig.get_from_yaml(),
     
     # Off-policy algorithms
-    IppoConfig.get_from_yaml(),
+    MaddpgConfig.get_from_yaml(),
+    MasacConfig.get_from_yaml(),
     IddpgConfig.get_from_yaml(),
     IsacConfig.get_from_yaml(),
 ]
 
 
 
-_seeds = [0, 1, 2, 3, 4]
+_seeds = [
+    0, 1, 2, 3, 4
+]
 
 output_dir = project_root / "outputs" / "experiments"
 
@@ -188,7 +193,7 @@ if __name__ == "__main__":
     # Experiment parameters
     num_envs = 72
     max_n_steps = 100
-    max_n_iters = 50
+    max_n_iters = 10
     experiment_dir = "experiments"
     eval_interval = 10
     # Loads from "benchmarl/conf/experiment/base_experiment.yaml"
@@ -208,8 +213,8 @@ if __name__ == "__main__":
     tasks = [
         # uav_navigation
         UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
-        # UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
-        # UrbanEnvTask.COVERAGE.get_from_yaml(),
+        UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
+        UrbanEnvTask.COVERAGE.get_from_yaml(),
     ]
 
     # Loads from "benchmarl/conf/model/layers"
@@ -217,8 +222,8 @@ if __name__ == "__main__":
     critic_model_config = MlpConfig.get_from_yaml()
     
     for seed in _seeds:
-        for algorithm_config in _algorithm_configs:
-            for task in tasks:
+        for task in tasks:
+            for algorithm_config in _algorithm_configs:
                 experiment = Experiment(
                     task=task,
                     algorithm_config=algorithm_config,
@@ -228,6 +233,9 @@ if __name__ == "__main__":
                     config=experiment_config,
                     # callbacks=[EvaluateLoS()],
                 )
+                print("-"*80)
+                print(f"Running experiment with seed={seed}, task={task.name}, algorithm={algorithm_config.name}")
+                print("-"*80)
                 experiment.run()
         
     

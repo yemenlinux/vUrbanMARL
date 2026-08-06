@@ -837,6 +837,16 @@ class Experiment(CallbackNotifier):
 
     def _optimizer_loop(self, group: str) -> TensorDictBase:
         subdata = self.replay_buffers[group].sample().to(self.config.train_device)
+        
+        # --- Fix shape mismatch when off_policy_use_prioritized_replay_buffer = True ---
+        if "priority_weight" in subdata.keys() and subdata["priority_weight"].dim() == 1:
+            # Extract the number of agents using the experiment's group map
+            n_agents = len(self.group_map[group])
+            
+            # Expand priority_weight from [128] to [128, n_agents]
+            subdata["priority_weight"] = subdata["priority_weight"].unsqueeze(-1).expand(-1, n_agents)
+        # --- End of fix---
+        
         loss_vals = self.losses[group](subdata)
         training_td = loss_vals.detach()
         loss_vals = self.algorithm.process_loss_vals(group, loss_vals)

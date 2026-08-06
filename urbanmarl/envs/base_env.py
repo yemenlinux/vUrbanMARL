@@ -163,14 +163,6 @@ class UrbanEnvBase(_EnvWrapper):
 
     def _make_specs(self, env) -> None:
         # Delegate to scenario
-        # self.agent_names = [f"agent_{i}" for i in range(len(self.agents))]
-        # self.agent_names_to_indices_map = {
-        #     agent: i for i, agent in enumerate(self.agent_names)
-        # }
-        # if self.group_map is None:
-        #     self.group_map = self._get_default_group_map(self.agent_names)
-        # elif isinstance(self.group_map, MarlGroupMapType):
-        #     self.group_map = self.group_map.get_group_map(self.agent_names)
         check_marl_grouping(self.group_map, self.agent_names)
 
         # # Instantiate scenario (done after group_map is set)
@@ -218,12 +210,7 @@ class UrbanEnvBase(_EnvWrapper):
                         )
                     )
                 
-                # if self.scenario.has_agent_info:
-                #     info_specs.append(
-                #         Composite(
-                #             self.scenario.info_agent_spec(self, group)
-                #         )
-                #     )
+            
             # Build multi-agent stacked specs
             group_action_spec = torch.stack(action_specs, dim=0)  
             group_observation_spec = torch.stack(observation_specs, dim=0)  
@@ -234,7 +221,12 @@ class UrbanEnvBase(_EnvWrapper):
             
             full_action_spec_unbatched[group] = group_action_spec
             full_observation_spec_unbatched[group] = group_observation_spec
+            # per agent reward spec is not needed for MARL, 
+            # but can be useful for analysis
+            # deprecated: full_reward_spec_unbatched[group] = group_reward_spec
             full_reward_spec_unbatched[group] = group_reward_spec
+            
+            
             if group_info_spec is not None:
                 full_observation_spec_unbatched[(group, "info")] = group_info_spec
             # Determine heterogeneity (if needed)
@@ -351,11 +343,11 @@ class UrbanEnvBase(_EnvWrapper):
         self.scenario.process_actions(self, tensordict)
         self.current_step += 1
 
-        self._update_reward()
+        # self._update_reward()
         done, terminated, truncated = self._update_done_flags()
 
         obs = self._get_obs()
-        reward = self.reward
+        # reward = self.reward
 
         source = {
             "done": done,
@@ -372,7 +364,8 @@ class UrbanEnvBase(_EnvWrapper):
         for group, agent_names in self.group_map.items():
             indices = [self.agent_names_to_indices_map[name] for name in agent_names]
             group_obs = obs[:, indices, :]
-            group_reward = reward[:, indices, :]
+            group_reward = self.scenario.reward(self, group)[:, indices, :]
+            # group_reward = self.scenario.reward(self, group)
             group_batch_size = self.batch_size + torch.Size([len(agent_names)])
 
             group_dict = {

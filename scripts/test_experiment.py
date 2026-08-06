@@ -24,7 +24,19 @@ warnings.filterwarnings(
 import hydra
 from omegaconf import DictConfig
 import torch
-from benchmarl.algorithms import MappoConfig
+from benchmarl.algorithms import (
+    # full observation in critic
+    MappoConfig,
+    MaddpgConfig,
+    MasacConfig, 
+    # no full observation in critic
+    IppoConfig,
+    IddpgConfig,
+    IsacConfig,
+    # Discrete only
+    #QmixConfig
+)
+
 from benchmarl.environments import VmasTask
 from benchmarl.experiment import Experiment, ExperimentConfig
 from benchmarl.models.mlp import MlpConfig
@@ -48,9 +60,10 @@ if __name__ == "__main__":
         experiment_config.device = "cuda"
         experiment_config.sampling_device = "cuda"
         experiment_config.train_device = "cuda"
-        experiment_config.buffer_device = "cuda"
+        # experiment_config.buffer_device = "cuda"
     experiment_config.max_n_iters = 3
     experiment_config.parallel_collection = True
+    # experiment_config.off_policy_use_prioritized_replay_buffer = True
     # Initialize targeted operational context mapping
     # task = UrbanEnvTask.UAVMEC_OFFLOADING.get_from_yaml()
     # task = UrbanEnvTask.UAV_NAVIGATION.get_from_yaml()
@@ -58,7 +71,8 @@ if __name__ == "__main__":
     task = UrbanEnvTask.COVERAGE.get_from_yaml()
     
     # Configure candidate algorithmic structures
-    algorithm_config = MappoConfig.get_from_yaml()
+    # algorithm_config = MappoConfig.get_from_yaml()
+    algorithm_config = MaddpgConfig.get_from_yaml()
     
     # Loads from "benchmarl/conf/model/layers/mlp.yaml"
     model_config = MlpConfig.get_from_yaml()

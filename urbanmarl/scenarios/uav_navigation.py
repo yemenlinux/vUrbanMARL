@@ -149,11 +149,12 @@ class Scenario(UrbanScenario):
                 device=env.device
             )
     
-    def reward(self, env):
-        """calculate the reward function per UAV-agent.
+    def reward(self, env, group):
+        """calculate the reward function per agent group.
 
         Args:
             env (UrbanEnv): urbanMARL environment
+            group (str): the agent group for which to calculate the reward
 
         Returns:
             reward (torch.Tensor): reward tensor of shape (batch_size, n_uavs, 1)
@@ -169,7 +170,9 @@ class Scenario(UrbanScenario):
         # Current reward: LoS ratio minus collision penalty
         los_ratio = env.uav_ue_los.float().mean(dim=2, keepdim=True)
         collision_ratio = env.uav_collisions.float()
-        return los_ratio - collision_ratio
+        reward = los_ratio - collision_ratio
+        return reward
+        # return los_ratio - collision_ratio
     
     def state_spec(self, env):
         from torchrl.data.tensor_specs import Unbounded

@@ -40,7 +40,7 @@ class Scenario(UAVNavigationScenario):
     def state(self, env):
         pass
     
-    def reward(self, env):
+    def reward(self, env, group):
         # Calculate the mean LoS ratio
         los_ratio = env.uav_ue_los.float().mean(dim=2, keepdim=True)
         # Calculate the collision penalty

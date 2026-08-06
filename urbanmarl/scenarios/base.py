@@ -69,8 +69,8 @@ class UrbanScenario(ABC):
         pass
 
     @abstractmethod
-    def reward(self, env) -> torch.Tensor:
-        """Return reward tensor of shape (batch_size, n_agents, 1)."""
+    def reward(self, env, group) -> torch.Tensor:
+        """Return reward tensor of shape (batch_size, 1)."""
         pass
 
     @abstractmethod
