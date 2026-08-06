@@ -234,7 +234,7 @@ if __name__ == "__main__":
                     # callbacks=[EvaluateLoS()],
                 )
                 print("-"*80)
-                print(f"Running experiment with seed={seed}, task={task.name}, algorithm={algorithm_config.name}")
+                print(f"Running experiment with seed={seed}, task={task.name}, algorithm={experiment.algorithm_name}")
                 print("-"*80)
                 experiment.run()
         
