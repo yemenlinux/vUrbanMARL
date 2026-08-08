@@ -56,7 +56,7 @@ Example of analysis and result evaluation images rendered in a single video.
 
 ### Prerequisites
 - **Python**: $\ge 3.10$ tested on 3.12
-- **PyTorch**: $\ge 2.2.0$ (CUDA recommended for large batch sizes)
+- **PyTorch**: $\ge 2.12.0$ (CUDA recommended for large batch sizes)
 
 ### Setup Steps
 
