@@ -1,7 +1,7 @@
 # vUrbanMARL: Vectorized Urban Multi-Agent Reinforcement Learning
 
-<a href="https://su.edu.ye/fcit/"><img src="docs/resources/fcit_logo.png" height="20" alt="Faculty of Computer and Information Technology"></a>
-<a href="http://su.edu.ye/"><img src="docs/resources/su_logo.png" height="20" alt="Sana'a University"></a>
+<a href="https://su.edu.ye/fcit/"><img src="docs/resources/fcit_logo.png" height="40" alt="Faculty of Computer and Information Technology"></a>
+<a href="http://su.edu.ye/"><img src="docs/resources/su_logo.png" height="40" alt="Sana'a University"></a>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.12+](https://img.shields.io/badge/pytorch-2.12%2B-orange.svg)](https://pytorch.org/)
 [![TorchRL 0.13.3](https://img.shields.io/badge/TorchRL-0.13.3-red.svg)](https://github.com/pytorch/rl)
@@ -12,7 +12,7 @@
 
 **vUrbanMARL** is built natively on **TorchRL**, **PyTorch**, **TensorDict**, and **BenchMARL**, vectorizes 3D spatial ray-casting of Line-of-Sight (LoS) paths, ITU-R P.1410 urban map procedural generation, mmWave radio propagation, and M/M/c queuing dynamics across hundreds of concurrent environments.
 
-**vUrbanMARL** is developed as a part of PhD research at the
+**vUrbanMARL** is developed to extend the PhD research project titled **"Three-Dimensional Mobility for Multi-UAV Assisted Multi-Access Edge Computing"** conducted by **Dr. Basheer Raddwan** under the supervision of **Prof. Ibrahim Al-Baltah**, at the
 **Department of Information Technology, Faculty of Computer and Information Technology, Sana’a University, Yemen**,
 by refactoring the 
 [**Panda5gSim**](https://github.com/yemenlinux/panda5gsim) project into a fully vectorized, data-driven, GPU-accelerated, and TorchRL-compatible MARL framework.
