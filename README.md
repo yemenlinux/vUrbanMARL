@@ -1,16 +1,32 @@
 # vUrbanMARL: Vectorized Urban Multi-Agent Reinforcement Learning
 
+<a href="https://su.edu.ye/fcit/"><img src="docs/resources/fcit_logo.png" height="20" alt="Faculty of Computer and Information Technology"></a>
+<a href="http://su.edu.ye/"><img src="docs/resources/su_logo.png" height="20" alt="Sana'a University"></a>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2%2B-orange.svg)](https://pytorch.org/)
-[![TorchRL 0.3+](https://img.shields.io/badge/TorchRL-0.3%2B-red.svg)](https://github.com/pytorch/rl)
-[![BenchMARL 1.2+](https://img.shields.io/badge/BenchMARL-1.2%2B-green.svg)](https://github.com/facebookresearch/BenchMARL)
+[![PyTorch 2.12+](https://img.shields.io/badge/pytorch-2.12%2B-orange.svg)](https://pytorch.org/)
+[![TorchRL 0.13.3](https://img.shields.io/badge/TorchRL-0.13.3-red.svg)](https://github.com/pytorch/rl)
+[![BenchMARL 1.5.2+](https://img.shields.io/badge/BenchMARL-1.5.2%2B-green.svg)](https://github.com/facebookresearch/BenchMARL)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**vUrbanMARL** is a high-performance, GPU-vectorized multi-agent reinforcement learning (MARL) framework and digital twin simulator tailored for **6G geospatial radio environments, Unmanned Aerial Vehicles (UAVs), and Mobile Edge Computing (MEC) networks**.
+**vUrbanMARL** is a high-performance, GPU-vectorized, data-driven multi-agent reinforcement learning (MARL) framework and digital twin simulator tailored for **6G geospatial radio environments, Unmanned Aerial Vehicles (UAVs), Mobile Edge Computing (MEC) networks, and other emerging applications**.
 
-Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, vUrbanMARL vectorizes 3D spatial ray-casting, ITU-R P.1410 urban map procedural generation, mmWave radio propagation, and M/M/c queuing dynamics across thousands of concurrent environments.
+**vUrbanMARL** is built natively on **TorchRL**, **PyTorch**, **TensorDict**, and **BenchMARL**, vectorizes 3D spatial ray-casting of Line-of-Sight (LoS) paths, ITU-R P.1410 urban map procedural generation, mmWave radio propagation, and M/M/c queuing dynamics across hundreds of concurrent environments.
 
-[![Watch the video](https://img.youtube.com/vi/o-M2GwV5U_Q/maxresdefault.jpg)](https://www.youtube.com/watch?v=o-M2GwV5U_Q)
+**vUrbanMARL** is developed as a part of PhD research at the
+**Department of Information Technology, Faculty of Computer and Information Technology, Sana’a University, Yemen**,
+by refactoring the 
+[**Panda5gSim**](https://github.com/yemenlinux/panda5gsim) project into a fully vectorized, data-driven, GPU-accelerated, and TorchRL-compatible MARL framework.
+
+---
+
+## 🎥 Video Overview
+Rendering example of 3D and 2D geospatial and building heatmap during training of 6 MARL algorithms with 3 task scenarios; using 3 UAV-BS and 10 UE. Orange lines show UAV trajectories, green and red lines show LoS/NLoS conditions.
+
+[![Watch the video](https://img.youtube.com/vi/NLE_W9oxWu0/maxresdefault.jpg)](https://www.youtube.com/watch?v=NLE_W9oxWu0)
+
+Example of analysis and result evaluation images rendered in a single video.
+
+[![Watch the video](https://img.youtube.com/vi/lzPbTOS-RSc/maxresdefault.jpg)](https://www.youtube.com/watch?v=lzPbTOS-RSc)
 
 ---
 
@@ -32,7 +48,6 @@ Built natively on **PyTorch**, **TensorDict**, **TorchRL**, and **BenchMARL**, v
 | `uav_navigation` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to improve the coverage by navigating the simulation volume to find the best positions. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
 | `uav_ue_los` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to maximize the Line-of-sight status with ground IoTs/users for high-altitude platform stations and UAV relays. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
 | `coverage` | Multi-UAV assest 5G+/6G wireless network independently/cooperatively learn to maximize the spatial coverage. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
-| `uavmec_offloading` | Multi-UAV assest MEC-enabled 5G+/6G wireless network independently/cooperatively learn to optimize latency and energy consumption. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
 
 
 ---
@@ -149,9 +164,19 @@ python scripts/full_experiment.py
 
 This project is released under the [MIT License](LICENSE).
 
-## ✍️ Author & Citation
+---
 
-Created by **Basheer A. Raddwan**.
+## Affiliation and Sponsors
+
+Department of Information Technology, Faculty of Computer and Information Technology, Sana’a University, Yemen.
+
+---
+
+## ✍️ Authors & Citation
+
+Created by: Dr. Basheer Raddwan
+
+Supervised by: Prof. Ibrahim Al-Baltah
 
 If you use **vUrbanMARL** in your research, please cite:
 ```bibtex
@@ -164,3 +189,7 @@ If you use **vUrbanMARL** in your research, please cite:
 	year = {2026},
 }
 ```
+
+## Contributors:
+  * Dr. Basheer Raddwan
+  * Prof. Ibrahim Al-Baltah

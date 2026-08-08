@@ -1024,7 +1024,9 @@ class Experiment(CallbackNotifier):
     def _load_experiment(self) -> Experiment:
         """Load trainer from checkpoint"""
         loaded_dict: OrderedDict = torch.load(
-            self.config.restore_file, map_location=self.config.restore_map_location
+            self.config.restore_file, 
+            map_location=self.config.restore_map_location,
+            weights_only=False  # Fix loading checkpoint restriction
         )
         self.load_state_dict(loaded_dict)
         return self
