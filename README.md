@@ -185,9 +185,47 @@ If you use **vUrbanMARL** in your research, please cite:
 	url = {https://www.researchgate.net/doi/10.13140/RG.2.2.17864.69122},
 	doi = {10.13140/RG.2.2.17864.69122},
 	urldate = {2026-07-31},
-	author = {{Basheer A. Raddwan} and {Ibrahim A. Al-Baltah} and {Ammar Thabit Zahary} and {Anwar Alshamery}},
+	author = {Raddwan, Basheer and Al-Baltah, Ibrahim and Zahary, Ammar and Alshamery, Anwar},
 	year = {2026},
 }
+```
+
+Related work
+
+```bibtex
+@article{RADDWAN2025104019,
+title = {Quantify the joint effect of mobility and urban environment on computation offloading to multi-UAV MEC network: Sojourn time},
+journal = {Ad Hoc Networks},
+volume = {179},
+pages = {104019},
+year = {2025},
+issn = {1570-8705},
+doi = {https://doi.org/10.1016/j.adhoc.2025.104019},
+url = {https://www.sciencedirect.com/science/article/pii/S1570870525002677},
+author = {Raddwan, Basheer and Al-Baltah, Ibrahim}
+}
+
+@ARTICLE{11050367,
+  author={Raddwan, Basheer and Al-Baltah, Ibrahim},
+  journal={IEEE Access}, 
+  title={Mobility-Aware Bivariate Line-of-Sight Probability for Air-to-Ground Communications Using Millimeter and Terahertz Waves}, 
+  year={2025},
+  volume={13},
+  number={},
+  pages={123913-123930},
+  keywords={Air to ground communication;Atmospheric modeling;Layout;Geometry;Line-of-sight propagation;Directional antennas;Ray tracing;Communication channels;Buildings;ITU;Line-of-sight probability;mobility;air-to-ground communication;multi-access edge computing;ray-tracing;unmanned aerial vehicles;service time;sojourn time;urban;simulation},
+  doi={10.1109/ACCESS.2025.3582890}}
+
+@INPROCEEDINGS{10777167,
+  author={Raddwan, Basheer and Al-Baltah, Ibrahim and Ghaleb, Mukhtar},
+  booktitle={2024 1st International Conference on Emerging Technologies for Dependable Internet of Things (ICETI)}, 
+  title={Environment-Aware 3D Mobility Simulation for the 5G and 6G Wireless Networks}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-8},
+  keywords={Three-dimensional displays;Mobility models;Biological system modeling;Wireless networks;Urban areas;Interference;Ray tracing;Throughput;3GPP;Signal to noise ratio;urban;5G;6G;mobility;ray-tracing;simulation;open-source;handover rate;framework;multi-access edge computing;unmanned aerial vehicle;3D mobility;3D environment},
+  doi={10.1109/ICETI63946.2024.10777167}}
 ```
 
 ## Contributors:
