@@ -1028,6 +1028,20 @@ class Experiment(CallbackNotifier):
             map_location=self.config.restore_map_location,
             weights_only=False  # Fix loading checkpoint restriction
         )
+        # --- Fix tracking the number of checkpoints when restoring from a checkpoint
+        checkpoint_folder = self.folder_name / "checkpoints"
+        if checkpoint_folder.exists():
+            import re
+            
+            def extract_frame_number(filepath: Path) -> int:
+                match = re.search(r"checkpoint_(\d+)\.pt", filepath.name)
+                return int(match.group(1)) if match else -1
+                
+            checkpoints = list(checkpoint_folder.glob("checkpoint_*.pt"))
+            checkpoints.sort(key=extract_frame_number)
+            self._checkpointed_files = deque(checkpoints)
+        # -----
+        
         self.load_state_dict(loaded_dict)
         return self
 

@@ -3,6 +3,7 @@ import sys
 import re
 from pathlib import Path
 import warnings
+import argparse
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -26,7 +27,8 @@ from benchmarl.experiment import Experiment
 
 
 # NEW_MAX_N_ITERS = 20
-ADDITIONAL_N_ITERS = 10
+global ADDITIONAL_N_ITERS
+# ADDITIONAL_N_ITERS = 10
 
 def get_latest_checkpoint(ckpt_dir: Path) -> Path:
     """Finds the checkpoint file with the highest frame count."""
@@ -113,11 +115,24 @@ def update_experiment_patch(
     max_n_frames = int(frames_per_batch * new_max_n_iters)
     return {
         'max_n_iters': new_max_n_iters,
-        'max_n_frames':max_n_frames
+        'max_n_frames':max_n_frames,
+        # 'keep_checkpoints_num': 1,
+        # 'checkpoint_interval': int(frames_per_batch * 10),
     }
 
 def main():
-    experiments_dir = project_root / "outputs" / "experiments"
+    parser = argparse.ArgumentParser(description="Resume BenchMARL Experiments")
+    parser.add_argument("--experiments_dir", 
+                        type=str, 
+                        default=str(project_root / "outputs" / "experiments"),
+                        help="Directory containing experiment folders to resume.")
+    parser.add_argument("--additional_n_iters", type=int, default=10,
+                        help="Number of additional iterations to run for each experiment.")
+    args = parser.parse_args()
+    
+    ADDITIONAL_N_ITERS = args.additional_n_iters
+    
+    experiments_dir = Path(args.experiments_dir)
     
     if not experiments_dir.exists():
         print(f"Target directory does not exist: {experiments_dir}")
