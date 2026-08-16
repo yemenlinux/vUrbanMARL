@@ -84,9 +84,11 @@ def config_experiment(
     max_n_iters: int = 20,
     experiment_dir: str = "experiments",
     eval_interval: int = 10,
+    episodes_per_batch: int = 1,
 ):
     # Experiment parameters
     frames_per_batch = int(num_envs * max_n_steps)
+    frames_per_batch = int(episodes_per_batch * num_envs * max_n_steps)
     max_n_frames = int(frames_per_batch * max_n_iters)
     #
     output_dir = project_root / "outputs" / experiment_dir
@@ -96,7 +98,7 @@ def config_experiment(
         experiment_config.device = "cuda"
         experiment_config.sampling_device = "cuda"
         experiment_config.train_device = "cuda"
-        # experiment_config.buffer_device = "cuda"
+        experiment_config.buffer_device = "cuda"
         
     # In case of non-vectorized environments, whether to run collection of multiple processes
     # If this is used, there will be n_envs_per_worker processes, collecting frames_per_batch/n_envs_per_worker frames each
@@ -107,7 +109,7 @@ def config_experiment(
     # Number of collected frames before ending, exclusive with max_n_iters
     experiment_config.max_n_frames = max_n_frames
     # Number of frames collected and each experiment iteration
-    experiment_config.on_policy_collected_frames_per_batch = int(num_envs * max_n_steps)
+    experiment_config.on_policy_collected_frames_per_batch = frames_per_batch
     # 
     # Number of environments used for collection
     # If the environment is vectorized, this will be the number of batched environments.
@@ -115,7 +117,7 @@ def config_experiment(
     experiment_config.on_policy_n_envs_per_worker = num_envs
     # 
     # Number of frames collected and each experiment iteration
-    experiment_config.off_policy_collected_frames_per_batch = int(num_envs * max_n_steps)
+    experiment_config.off_policy_collected_frames_per_batch = frames_per_batch
     # 
     # Number of environments used for collection
     # If the environment is vectorized, this will be the number of batched environments.
@@ -123,18 +125,18 @@ def config_experiment(
     experiment_config.off_policy_n_envs_per_worker = num_envs
     # 
     # whether to use priorities while sampling from the replay buffer
-    experiment_config.off_policy_use_prioritized_replay_buffer = True
+    # experiment_config.off_policy_use_prioritized_replay_buffer = True
     #
     # experiment_config.evaluation = True
     # Whether to render the evaluation (if rendering is available)
     # experiment_config.render = True
     # Frequency of evaluation in terms of collected frames (this should be a multiple of on/off_policy_collected_frames_per_batch)
-    experiment_config.evaluation_interval = int(eval_interval * num_envs * max_n_steps)
+    experiment_config.evaluation_interval = int(eval_interval * frames_per_batch)
     # Number of episodes that evaluation is run on
-    # experiment_config.evaluation_episodes = 10
+    experiment_config.evaluation_episodes = 5
     
     # List of loggers to use, options are = wandb, csv, tensorboard, mflow
-    # experiment_config.loggers = [tensorboard]
+    # experiment_config.loggers = [csv, tensorboard]
     # Wandb project name (kept for backward compatibility)
     # experiment_config.project_name = "benchmarl"
     # Wandb extra kwargs passed to the WandbLogger (~superset of wandb.init kwargs)
@@ -184,7 +186,7 @@ _algorithm_configs = [
 
 
 _seeds = [
-    0, 1, 2, 3, 4
+    0, #1, 2, 3, 4
 ]
 
 output_dir = project_root / "outputs" / "experiments"
@@ -193,7 +195,7 @@ if __name__ == "__main__":
     # Experiment parameters
     num_envs = 72
     max_n_steps = 100
-    max_n_iters = 10
+    max_n_iters = 20 # for text then can resume using resume_experiments.py
     experiment_dir = "experiments"
     eval_interval = 10
     # Loads from "benchmarl/conf/experiment/base_experiment.yaml"
@@ -211,9 +213,9 @@ if __name__ == "__main__":
     
     # Loads from "benchmarl/conf/task/urbanmarl"
     tasks = [
-        # uav_navigation
-        UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
-        UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
+        # uncomment the tasks you want to run
+        # UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
+        # UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
         UrbanEnvTask.COVERAGE.get_from_yaml(),
     ]
 

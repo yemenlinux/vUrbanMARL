@@ -8,7 +8,7 @@ Usage:
 import sys
 import os
 from pathlib import Path
-
+import shutil
 
 # Add project root to path 
 project_root = Path(__file__).parent.parent
@@ -238,7 +238,20 @@ def parse_experiment_folder_name(folder_path: str | Path) -> dict:
         "timestamp_raw": timestamp_str
     }
 
-# 1
+def get_algo_colors(dictionary: Dict) -> Dict[str, tuple]:
+    """Generates a consistent color palette for all algorithms present 
+    in the dataset."""
+    unique_algos = set()
+    for metric, dfs in dictionary.items():
+        for df in dfs:
+            unique_algos.update(df['algorithm'].unique())
+    
+    unique_algos = sorted(list(unique_algos))
+    # Using 'colorblind' palette for accessible and distinct colors
+    palette = sns.color_palette("colorblind", n_colors=len(unique_algos))
+    return {algo: color for algo, color in zip(unique_algos, palette)}
+
+#
 def find_experiment_dirs(root_dir):
     """
     Locate all experiment directories under root_dir.
@@ -528,7 +541,7 @@ def plot_metric(
     output_dir, 
     algo_names=None,
     pdf=False
-    ):
+):
     """
     Plot aggregated metric for each algorithm (from aggregated_dict) and save figure.
     """
@@ -591,6 +604,7 @@ def metric_labels(
 def plot_all_metrics(
     dictionary: Dict,
     output_dir, 
+    algo_colors: Dict[str, tuple],
     pdf=False,
     fill = True
 ):
@@ -607,6 +621,11 @@ def plot_all_metrics(
             fig, ax = plt.subplots(figsize=FIGURE_SIZE)  
         for algo in con_df.algorithm.unique():
             _df = con_df.loc[con_df['algorithm'] == algo]
+            #
+            max_limit = np.max(_df['value'].values)
+            min_limit = np.min(_df['value'].values)
+            #
+            algo_color = algo_colors.get(algo)
             if 'env_id' in _df.columns:
                 # 
                 x_label = 'env_id'
@@ -619,9 +638,11 @@ def plot_all_metrics(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 # 
-                ax.plot(E, metric_mean, label= algo.upper())
+                ax.plot(E, metric_mean, label= algo.upper(), color=algo_color)
                 if fill:
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
             else:
                 x_label = 'step'
                 df = _df.groupby([x_label])[['value']].agg(percentile_95)
@@ -633,10 +654,12 @@ def plot_all_metrics(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 #
-                ax.plot(E, metric_mean, label= algo.upper())
+                ax.plot(E, metric_mean, label= algo.upper(), color=algo_color)
                 if fill:
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
-            
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
+
         #
         x_label, y_label, title = metric_labels(metric)
         plt.xlabel(x_label)
@@ -661,6 +684,7 @@ def plot_all_metrics(
         
 def plot_group_metrics(
     dictionary: Dict,
+    algo_colors: Dict[str, tuple],
     output_dir = None, 
     metric_list= [],
     n_cols = 2,
@@ -696,6 +720,11 @@ def plot_group_metrics(
         #
         for algo in sorted(list(con_df.algorithm.unique())):
             _df = con_df.loc[con_df['algorithm'] == algo]
+            #
+            max_limit = np.max(_df['value'].values)
+            min_limit = np.min(_df['value'].values)
+            #
+            algo_color = algo_colors.get(algo)
             if 'env_id' in _df.columns:
                 # 
                 x_label = 'env_id'
@@ -708,12 +737,11 @@ def plot_group_metrics(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 # 
-                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0, color=algo_color)
                 if fill:
-                    # min_fill = np.clip(metric_mean - metric_std, a_min=np.min(metric_mean), a_max=None)
-                    # max_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=np.max(metric_mean))
-                    # ax.fill_between(E, min_fill, max_fill, alpha=0.2)
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
             else:
                 x_label = 'step'
                 df = _df.groupby([x_label])[['value']].agg(percentile_95)
@@ -725,13 +753,12 @@ def plot_group_metrics(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 #
-                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0, color=algo_color)
                 if fill:
-                    # min_fill = np.clip(metric_mean - metric_std, a_min=np.min(metric_mean), a_max=None)
-                    # max_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=np.max(metric_mean))
-                    # ax.fill_between(E, min_fill, max_fill, alpha=0.2)
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
-            
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
+
         #
         x_label, y_label, title = metric_labels(metric)
         ax.set_xlabel(x_label)
@@ -756,6 +783,7 @@ def plot_group_metrics(
 def plot_group_tasks(
     dictionary: Dict,
     metric,
+    algo_colors: Dict[str, tuple],
     output_dir = None, 
     n_cols = 3,
     projection = 'cartesian',
@@ -794,6 +822,11 @@ def plot_group_tasks(
         #
         for algo in sorted(list(_con_df.algorithm.unique())):
             _df = _con_df.loc[_con_df['algorithm'] == algo]
+            #
+            max_limit = np.max(_df['value'].values)
+            min_limit = np.min(_df['value'].values)
+            #
+            algo_color = algo_colors.get(algo)
             if 'env_id' in _df.columns:
                 # 
                 x_label = 'env_id'
@@ -806,9 +839,11 @@ def plot_group_tasks(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 # 
-                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0, color=algo_color)
                 if fill:
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
             else:
                 x_label = 'step'
                 df = _df.groupby([x_label])[['value']].agg(percentile_95)
@@ -820,9 +855,11 @@ def plot_group_tasks(
                 metric_mean = df['mean'] 
                 metric_std = df['std'] 
                 #
-                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0)
+                ax.plot(E, metric_mean, label= algo.upper(), linewidth=2.0, color=algo_color)
                 if fill:
-                    ax.fill_between(E, metric_mean - metric_std, metric_mean + metric_std, alpha=0.2)
+                    lower_fill = np.clip(metric_mean - metric_std, a_min=min_limit, a_max=None)
+                    upper_fill = np.clip(metric_mean + metric_std, a_min=None, a_max=max_limit)
+                    ax.fill_between(E, lower_fill, upper_fill, alpha=0.2, color=algo_color)
             
         #
         x_label, y_label, title = metric_labels(metric)
@@ -848,14 +885,15 @@ def plot_group_tasks(
 
 def plot_catalogue(
     dictionary: Dict,
-    output_dir, 
+    output_dir,
+    algo_colors: Dict[str, tuple],
     figsize = FIGURE_SIZE,
     pdf=False,
     fill = True
 ):
     catalog_dir = output_dir / 'catalogue'
     # draw all metrics
-    plot_all_metrics(dictionary, catalog_dir, pdf=pdf)
+    plot_all_metrics(dictionary, catalog_dir, algo_colors=algo_colors, pdf=pdf)
     # plot groups
     time_metrics = [
         'timers_collection_time',
@@ -865,6 +903,7 @@ def plot_catalogue(
     ]
     plot_group_metrics(
         dictionary,
+        algo_colors,
         catalog_dir, 
         metric_list= time_metrics,
         n_cols = 2,
@@ -882,6 +921,7 @@ def plot_catalogue(
     ]
     plot_group_metrics(
         dictionary,
+        algo_colors,
         catalog_dir, 
         metric_list= info_metrics,
         n_cols = 2,
@@ -894,6 +934,7 @@ def plot_catalogue(
 def plot_training_metrics(
     dictionary: Dict,
     output_dir, 
+    algo_colors: Dict[str, tuple],
     figsize = FIGURE_SIZE,
     n_cols = 3,
     pdf=True,
@@ -927,6 +968,7 @@ def plot_training_metrics(
     ]
     plot_group_metrics(
         dictionary,
+        algo_colors,
         output_dir, 
         metric_list= training_metrics,
         n_cols = n_cols,
@@ -941,6 +983,7 @@ def plot_training_metrics(
 def plot_report(
     dictionary: Dict,
     output_dir, 
+    algo_colors: Dict[str, tuple],
     figsize = FIGURE_SIZE,
     pdf=True,
     fill = True
@@ -953,12 +996,13 @@ def plot_report(
         'reward',
     ]
     new_dict = {metric: dfs for metric, dfs in dictionary.items() if metric in info_metrics}
-    plot_all_metrics(new_dict, output_dir, pdf=pdf)
+    plot_all_metrics(new_dict, output_dir, algo_colors=algo_colors, pdf=pdf)
     # plot groups per task
     for metric in info_metrics:
         plot_group_tasks(
             dictionary,
-            metric=metric,
+            metric,
+            algo_colors,
             output_dir=output_dir, 
             n_cols = 3,
             projection = 'polar',
@@ -975,6 +1019,7 @@ def plot_report(
     ]
     plot_group_metrics(
         dictionary,
+        algo_colors,
         output_dir, 
         metric_list= time_metrics,
         n_cols = 2,
@@ -987,7 +1032,8 @@ def plot_report(
     for metric in time_metrics:
         plot_group_tasks(
             dictionary,
-            metric=metric,
+            metric,
+            algo_colors,
             output_dir=output_dir, 
             n_cols = 3,
             projection = 'cartesian',
@@ -1004,6 +1050,7 @@ def plot_report(
     ]
     plot_group_metrics(
         dictionary,
+        algo_colors,
         output_dir, 
         metric_list= info_metrics,
         n_cols = 2,
@@ -1012,6 +1059,22 @@ def plot_report(
         figsize = figsize,
         pdf=pdf
     )
+
+def extract_marl_eval_colors(fig) -> dict:
+    """Extracts the algorithm color mapping from a marl-eval figure."""
+    algo_colors = {}
+    
+    # Iterate through all axes in the figure
+    for ax in fig.axes:
+        # Iterate through all lines plotted in the axis
+        for line in ax.get_lines():
+            label = line.get_label()
+            # Ignore hidden lines or Matplotlib artifacts
+            if label and not label.startswith('_'):
+                # marl-eval often capitalizes labels; convert to lower to match your df
+                algo_colors[label.lower()] = line.get_color()
+                
+    return algo_colors
 
 
 
@@ -1049,11 +1112,21 @@ def main():
     save_path = plot_dir / "performance_profile.pdf"
     performance_profile_figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
 
-    aggregate_scores, d, c = Plotting.aggregate_scores(
-        environment_comparison_matrix=environment_comparison_matrix
+    aggregate_scores, mean_table, ci_table = Plotting.aggregate_scores(
+        environment_comparison_matrix=environment_comparison_matrix,
+        save_tabular_as_latex=True
     )
     save_path = plot_dir / "aggregate_scores.pdf"
     aggregate_scores.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+    
+    src_csv = Path("aggregated_score_return.csv")
+    src_tex = Path("aggregated_score_return_latex.txt")
+    if src_csv.exists():
+        shutil.move(src_csv, plot_dir / "aggregate_scores_return.csv")
+    if src_tex.exists():
+        shutil.move(src_tex, plot_dir / "aggregated_score_return_latex.tex")
+    
+    print(f"Tabular data saved to {plot_dir}")
     
     environemnt_sample_efficiency_curves, _, _ = Plotting.environemnt_sample_efficiency_curves(
         sample_effeciency_matrix=sample_efficiency_matrix
@@ -1070,7 +1143,7 @@ def main():
         # task_sample_efficiency_curves.set_title(f"{task.upper()} Sample Efficiency", fontsize=16)
         task_sample_efficiency_curves.figure.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
     
-    # draw scallers
+    # -------- draw scallers  -------- 
     experiments = find_experiment_dirs(experiments_dir)
     if not experiments:
         print(f"No experiment directories found in {experiments_dir}")
@@ -1078,11 +1151,15 @@ def main():
     
     all_data = load_all_metrics(experiments)
     
+    # Generate unified colors
+    # algo_colors = get_algo_colors(all_data)
+    algo_colors = extract_marl_eval_colors(performance_profile_figure)
+    
     # draw catalog of metrics
-    # plot_all_metrics(all_data, png)
     plot_catalogue(
         all_data,
-        plot_dir, 
+        plot_dir,
+        algo_colors,
         figsize = FIGURE_SIZE,
         pdf=False
     )
@@ -1090,6 +1167,7 @@ def main():
     plot_training_metrics(
         all_data,
         plot_dir, 
+        algo_colors,
         figsize = FIGURE_SIZE,
         n_cols = 4,
         pdf=True,
@@ -1099,6 +1177,7 @@ def main():
     plot_report(
         all_data,
         plot_dir, 
+        algo_colors,
         figsize = FIGURE_SIZE,
         pdf=True
     )
