@@ -116,8 +116,6 @@ def update_experiment_patch(
     return {
         'max_n_iters': new_max_n_iters,
         'max_n_frames':max_n_frames,
-        # 'keep_checkpoints_num': 1,
-        # 'checkpoint_interval': int(frames_per_batch * 10),
     }
 
 def main():
