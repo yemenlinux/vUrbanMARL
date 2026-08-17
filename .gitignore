@@ -156,6 +156,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.venv-cpu
+.venv-cuda126
 
 # Spyder project settings
 .spyderproject

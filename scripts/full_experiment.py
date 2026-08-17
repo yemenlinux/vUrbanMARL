@@ -169,7 +169,8 @@ def config_experiment(
     # experiment_config.keep_checkpoints_num = 3
     # Whether to exclude the replay buffers from the checkpoint
     # experiment_config.exclude_buffer_from_checkpoint = False
-    
+
+
 # Algorithm configurations to test
 _algorithm_configs = [
     # On-policy algorithms
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     # Experiment parameters
     num_envs = 72
     max_n_steps = 100
-    max_n_iters = 20 # for text then can resume using resume_experiments.py
+    max_n_iters = 10 # for text then can resume using resume_experiments.py
     experiment_dir = "experiments"
     eval_interval = 10
     # Loads from "benchmarl/conf/experiment/base_experiment.yaml"
