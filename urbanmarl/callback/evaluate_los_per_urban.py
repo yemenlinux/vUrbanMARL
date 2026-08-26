@@ -1,3 +1,8 @@
+"""UrbanMARL Callback Module for Line-of-Sight Evaluation.
+
+Provides BenchMARL experiment callbacks for tracking LoS and network metrics during training.
+"""
+
 from typing import List
 
 from benchmarl.algorithms import MappoConfig
@@ -9,36 +14,28 @@ from tensordict import TensorDict, TensorDictBase
 
 
 class EvaluateLoS(Callback):
+    """BenchMARL Callback to evaluate LoS ratios per urban environment configuration.
+
+    Interprets training and evaluation batches to record LoS statistics.
+    """
+
     def on_train_step(self, batch: TensorDictBase, group: str) -> TensorDictBase:
-        """
-        A callback called for every training step.
+        """Invoked on each training step.
 
         Args:
-           batch (TensorDictBase): tensordict with the training batch
-           group (str): group name
+            batch (TensorDictBase): Tensordict containing training batch data.
+            group (str): Agent group identifier name.
 
         Returns:
-            TensorDictBase: a new tensordict containing the loss values
-
+            TensorDictBase: Tensordict with optional computed metrics.
         """
-        # print("-"*60)
-        # print(f"group: {group}")
-        # for key in batch.keys(True, True):
-        #     print(f"{key}, shape: {batch[key].shape}")
-        # print("-"*60)
         pass
-        
-    def on_train_end(self, training_td: TensorDictBase, group: str):
-        """
-        A callback called at the end of training.
+
+    def on_train_end(self, training_td: TensorDictBase, group: str) -> None:
+        """Invoked at the conclusion of experiment training.
 
         Args:
-            training_td (TensorDictBase): tensordict containing the loss values
-            group (str): group name
-
+            training_td (TensorDictBase): Tensordict containing training history metrics.
+            group (str): Agent group identifier name.
         """
-        # print("-"*60)
-        # print(f"group: {group}")
-        # for key in training_td.keys(True, True):
-        #     print(f"{key}, shape: {training_td[key].shape}")
-        # print("-"*60)
+        pass

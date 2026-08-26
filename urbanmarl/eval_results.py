@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
-"""
-eval_results.py - Aggregate, evaluate, and plot BenchMARL CSV metrics.
+"""UrbanMARL Results Evaluation and Plotting Suite.
 
-Usage:
-    python eval_results.py /path/to/outputs/navigate
+Aggregates, processes, evaluates, and visualizes BenchMARL training CSV metrics
+across algorithms, seeds, and urban environment configurations.
 """
-import sys
+
+import argparse
+from datetime import datetime
+import glob
 import os
 from pathlib import Path
+import re
 import shutil
+import sys
+from typing import Dict, List, Optional, Tuple
 
-# Add project root to path 
 project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-
-
-import re
-import argparse
-import glob
-import numpy as np
-import pandas as pd
 from collections import defaultdict
-
-from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -33,39 +28,64 @@ import pandas as pd
 from scipy.stats import sem
 import seaborn as sns
 
-from datetime import datetime
 from benchmarl.eval_results import (
-    load_and_merge_json_dicts, 
-    Plotting, 
-    get_raw_dict_from_multirun_folder
+    Plotting,
+    get_raw_dict_from_multirun_folder,
+    load_and_merge_json_dicts,
 )
 
 FIGURE_SIZE = (7, 6)
 
 
 class ExperimentResult:
-    """Container for a single experiment run (a directory under the output root)."""
-    def __init__(self, path: Path):
+    """Container holding metadata and scalar logs for a single experiment run.
+
+    Attributes:
+        path (Path): Path to experiment root directory.
+        name (str): Experiment folder name.
+        algorithm (str): Algorithm name (e.g. 'mappo', 'maddpg').
+        scenario (str): Scenario identifier.
+        model (str): Model architecture name (e.g. 'mlp').
+        scalars_dir (Path): Directory containing CSV metrics logs.
+        csv_files (List[Path]): List of CSV file paths.
+    """
+
+    def __init__(self, path: Path) -> None:
+        """Initializes ExperimentResult.
+
+        Args:
+            path (Path): Path to experiment run output directory.
+        """
         self.path = path
-        self.name = path.name  # e.g., "iddpg_navigate_mlp__4cb37893_26_06_21-22_04_23"
-        # Parse algorithm and scenario from name
+        self.name = path.name
         parts = self.name.split('_')
-        self.algorithm = parts[0]  # first part (e.g., iddpg, ippo, mappo, etc.)
+        self.algorithm = parts[0]
         self.scenario = parts[1]
         self.model = parts[2]
-        
-        
-        # Scalars directory
+
         self.scalars_dir = path / self.name / "scalars"
-        self.csv_files = list(self.scalars_dir.glob("*.csv")) if self.scalars_dir.exists() else []
+        self.csv_files = (
+            list(self.scalars_dir.glob("*.csv"))
+            if self.scalars_dir.exists()
+            else []
+        )
 
     def get_csv_data(self, pattern: str) -> Optional[pd.DataFrame]:
-        """Load CSV file matching the pattern (e.g., 'collection_agents_reward_episode_reward_mean.csv')."""
+        """Loads CSV scalar data file matching given filename pattern.
+
+        Args:
+            pattern (str): Target CSV filename (e.g. 'collection_agents_reward_episode_reward_mean.csv').
+
+        Returns:
+            Optional[pd.DataFrame]: Loaded DataFrame or None if file not found or invalid.
+        """
         for csv_path in self.csv_files:
             if csv_path.name == pattern:
                 metric = os.path.splitext(pattern)[0]
                 try:
-                    df = pd.read_csv(csv_path, header=None, names=['step', metric])
+                    df = pd.read_csv(
+                        csv_path, header=None, names=['step', metric]
+                    )
                     return df
                 except Exception as e:
                     print(f"Error reading {csv_path}: {e}")
@@ -74,20 +94,26 @@ class ExperimentResult:
 
     @property
     def has_data(self) -> bool:
+        """Checks if scalar CSV files exist for this experiment."""
         return len(self.csv_files) > 0
 
+
 def find_experiments(root: Path) -> List[ExperimentResult]:
-    """Find all experiment directories under root that contain a config.pkl and a scalars directory."""
+    """Discovers all experiment output directories within root path.
+
+    Args:
+        root (Path): Root directory containing output experiment runs.
+
+    Returns:
+        List[ExperimentResult]: List of valid ExperimentResult instances.
+    """
     experiments = []
-    # The structure: root / experiment_name / experiment_name / scalars
     for exp_dir in root.glob("*"):
         if exp_dir.is_dir():
-            # Check if there is a subdirectory with the same name (the actual experiment data)
             sub_dir = exp_dir / exp_dir.name
             if sub_dir.exists() and (sub_dir / "scalars").exists():
                 experiments.append(ExperimentResult(exp_dir))
             else:
-                # Maybe the scalars are directly under exp_dir?
                 if (exp_dir / "scalars").exists():
                     experiments.append(ExperimentResult(exp_dir))
     return experiments

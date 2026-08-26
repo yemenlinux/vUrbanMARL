@@ -219,7 +219,7 @@ class Scenario(UrbanScenario):
                     device=env.device,
                 ),
                 "velocity": Unbounded(
-                    shape=torch.Size([3]),
+                    shape=torch.Size([env.n_uavs]),
                     dtype=torch.float32,
                     device=env.device,
                 ),
