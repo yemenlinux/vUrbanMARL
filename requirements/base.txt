@@ -4,6 +4,7 @@ id-marl-eval @ git+https://github.com/yemenlinux/marl-eval.git
 benchmarl @ git+https://github.com/yemenlinux/BenchMARL.git
 hydra-core>=1.3.2
 omegaconf>=2.3.0
+torch-geometric>=2.8.0
 numpy>=1.24.0
 scipy>=1.10.0
 tensorboard>=2.14.0
