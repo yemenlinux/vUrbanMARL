@@ -86,7 +86,9 @@ def test_urban_env_step_with_mock_action_tensordict(mock_urban_env):
 
     # Verify group next rewards are populated
     for group in mock_urban_env.group_map.keys():
-        assert ("next", group, "reward") in td_step.keys(True, True) or "reward" in td_step.get(("next", group), {}).keys()
+        assert ("next", group, "reward") in td_step.keys(
+            True, True
+        ) or "reward" in td_step.get(("next", group), {}).keys()
 
 
 def test_urban_env_fake_tensordict(mock_urban_env):

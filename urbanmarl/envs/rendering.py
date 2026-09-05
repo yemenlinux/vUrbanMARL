@@ -13,15 +13,28 @@ import torch
 
 try:
     from matplotlib import pyplot as plt
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    from mpl_toolkits.mplot3d.art3d import Line3DCollection
     from matplotlib.collections import LineCollection
-    
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
+
 except ImportError:
     raise ImportError(
         "Matplotlib is required for rendering. Install it using `pip install matplotlib`."
     )
-    
+
+
+def _safe_to_numpy(x, dtype=None):
+    """Safely converts input (torch.Tensor, list, or ndarray) to numpy array, detaching if needed."""
+    if isinstance(x, torch.Tensor):
+        x = x.detach().cpu().numpy()
+    elif isinstance(x, (list, tuple)):
+        x = [
+            elem.detach().cpu().numpy() if isinstance(elem, torch.Tensor) else elem
+            for elem in x
+        ]
+    if dtype is not None:
+        return np.asarray(x, dtype=dtype)
+    return np.asarray(x)
+
 
 @dataclass
 class UrbanRenderConfig:
@@ -52,24 +65,27 @@ class UrbanRenderConfig:
 
     figsize: Tuple[int, int] = (1280, 820)
     dpi: int = 100
-    heatmap_color: str = 'gist_yarg'
+    heatmap_color: str = "gist_yarg"
     heatmap_alpha: float = 0.7
-    building_color: str = '#C0C0C0'
+    building_color: str = "#C0C0C0"
     building_alpha: float = 0.2
-    uav_color: str = '#FF4444'
+    uav_color: str = "#FF4444"
     uav_marker: str = "^"
-    ue_color: str = '#4444FF'
+    ue_color: str = "#4444FF"
     ue_marker: str = "."
-    base_station_color: str = '#FF4444'
+    base_station_color: str = "#FF4444"
     base_station_marker: str = "v"
-    trajectory_color: str = '#FFA500'
+    trajectory_color: str = "#FFA500"
     show_trajectory: bool = True
     trajectory_length: int = 100
-    link_los_color: str = '#00FF00'
-    link_nlos_color: str = '#FF0000'
+    link_los_color: str = "#00FF00"
+    link_nlos_color: str = "#FF0000"
     camera_elev: float = 45.0
     camera_azim: float = -120.0
     show_labels: bool = True
+    show_telemetry_hud: bool = True
+    hud_fontsize: int = 8
+    show_rem_contours: bool = False
 
 
 class Urban3DRenderer:
@@ -122,25 +138,22 @@ class Urban3DRenderer:
             ),
             dpi=self.config.dpi,
         )
-        ax3d = fig.add_subplot(121, projection='3d')
-        ax3d.set_title('Urban Environment 3D View')
+        ax3d = fig.add_subplot(121, projection="3d")
+        ax3d.set_title("Urban Environment 3D View")
         ax3d.set_xlim(-volume_size[0] / 2, volume_size[0] / 2)
         ax3d.set_ylim(-volume_size[1] / 2, volume_size[1] / 2)
         ax3d.set_zlim(0, volume_size[2])
-        ax3d.set_xlabel('X (m)')
-        ax3d.set_ylabel('Y (m)')
-        ax3d.set_zlabel('Z (m)')
-        ax3d.view_init(
-            elev=self.config.camera_elev, 
-            azim=self.config.camera_azim
-        )
+        ax3d.set_xlabel("X (m)")
+        ax3d.set_ylabel("Y (m)")
+        ax3d.set_zlabel("Z (m)")
+        ax3d.view_init(elev=self.config.camera_elev, azim=self.config.camera_azim)
 
         ax2d = fig.add_subplot(122)
-        ax2d.set_title('Urban Environment Heatmap (Top View)')
+        ax2d.set_title("Urban Environment Heatmap (Top View)")
         ax2d.set_xlim(-volume_size[0] / 2, volume_size[0] / 2)
         ax2d.set_ylim(-volume_size[1] / 2, volume_size[1] / 2)
-        ax2d.set_xlabel('X (m)')
-        ax2d.set_ylabel('Y (m)')
+        ax2d.set_xlabel("X (m)")
+        ax2d.set_ylabel("Y (m)")
 
         self._fig = fig
         self._ax3D = ax3d
@@ -152,22 +165,20 @@ class Urban3DRenderer:
         Args:
             volume_size (List[float]): Environment volume dimensions [x, y, z].
         """
-        self._ax3D.set_title('Urban Environment 3D View')
+        self._ax3D.set_title("Urban Environment 3D View")
         self._ax3D.set_xlim(-volume_size[0] / 2, volume_size[0] / 2)
         self._ax3D.set_ylim(-volume_size[1] / 2, volume_size[1] / 2)
         self._ax3D.set_zlim(0, volume_size[2])
-        self._ax3D.set_xlabel('X (m)')
-        self._ax3D.set_ylabel('Y (m)')
-        self._ax3D.set_zlabel('Z (m)')
-        self._ax3D.view_init(
-            elev=self.config.camera_elev, azim=self.config.camera_azim
-        )
+        self._ax3D.set_xlabel("X (m)")
+        self._ax3D.set_ylabel("Y (m)")
+        self._ax3D.set_zlabel("Z (m)")
+        self._ax3D.view_init(elev=self.config.camera_elev, azim=self.config.camera_azim)
 
-        self._ax2D.set_title('Urban Environment Heatmap (Top View)')
+        self._ax2D.set_title("Urban Environment Heatmap (Top View)")
         self._ax2D.set_xlim(-volume_size[0] / 2, volume_size[0] / 2)
         self._ax2D.set_ylim(-volume_size[1] / 2, volume_size[1] / 2)
-        self._ax2D.set_xlabel('X (m)')
-        self._ax2D.set_ylabel('Y (m)')
+        self._ax2D.set_xlabel("X (m)")
+        self._ax2D.set_ylabel("Y (m)")
 
     def _draw_heatmap(
         self, heatmap: Union[np.ndarray, torch.Tensor], volume_size: List[float]
@@ -194,13 +205,13 @@ class Urban3DRenderer:
         tpc = self._ax2D.imshow(
             heatmap_np.T,
             extent=extent,
-            origin='lower',
+            origin="lower",
             cmap=self.config.heatmap_color,
             alpha=self.config.heatmap_alpha,
         )
         self._fig.colorbar(
             tpc,
-            orientation='horizontal',
+            orientation="horizontal",
             ax=self._ax2D,
             fraction=0.046,
             pad=0.04,
@@ -215,19 +226,21 @@ class Urban3DRenderer:
         """
         all_faces = []
         for b in buildings:
-            x, y, z = b['position']
-            w, l, h = b['size']
+            x, y, z = b["position"]
+            w, l, h = b["size"]
 
-            vertices = np.array([
-                [x, y, z],
-                [x + w, y, z],
-                [x + w, y + l, z],
-                [x, y + l, z],
-                [x, y, z + h],
-                [x + w, y, z + h],
-                [x + w, y + l, z + h],
-                [x, y + l, z + h],
-            ])
+            vertices = np.array(
+                [
+                    [x, y, z],
+                    [x + w, y, z],
+                    [x + w, y + l, z],
+                    [x, y + l, z],
+                    [x, y, z + h],
+                    [x + w, y, z + h],
+                    [x + w, y + l, z + h],
+                    [x, y + l, z + h],
+                ]
+            )
 
             faces = [
                 [vertices[0], vertices[1], vertices[5], vertices[4]],
@@ -243,7 +256,7 @@ class Urban3DRenderer:
                 all_faces,
                 alpha=self.config.building_alpha,
                 facecolor=self.config.building_color,
-                edgecolor='black',
+                edgecolor="black",
                 linewidth=0.5,
             )
             self._ax3D.add_collection3d(poly3d)
@@ -268,16 +281,15 @@ class Urban3DRenderer:
             uav_positions = uav_positions.reshape(1, -1)
 
         n_uavs = len(uav_positions)
-        names = uav_names or [f'UAV-{i}' for i in range(n_uavs)]
+        names = uav_names or [f"UAV-{i}" for i in range(n_uavs)]
 
         for i in range(n_uavs):
             pos = uav_positions[i].flatten()
             name = names[i]
             if name not in self._trajectories:
                 self._trajectories[name] = []
-            if (
-                len(self._trajectories[name]) == 0
-                or not np.array_equal(pos, self._trajectories[name][-1])
+            if len(self._trajectories[name]) == 0 or not np.array_equal(
+                pos, self._trajectories[name][-1]
             ):
                 self._trajectories[name].append(pos.copy())
             if len(self._trajectories[name]) > self.config.trajectory_length:
@@ -291,7 +303,7 @@ class Urban3DRenderer:
             c=self.config.uav_color,
             s=100,
             marker=self.config.uav_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=1,
             alpha=0.9,
         )
@@ -301,10 +313,10 @@ class Urban3DRenderer:
             c=self.config.uav_color,
             s=100,
             marker=self.config.uav_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=1,
             alpha=0.9,
-            label='UAV',
+            label="UAV",
         )
 
         if self.config.show_trajectory:
@@ -353,12 +365,8 @@ class Urban3DRenderer:
             ue_positions = ue_positions.reshape(1, -1)
 
         n_ues = len(ue_positions)
-        names = ue_names or [f'UE-{i}' for i in range(n_ues)]
-        z_vals = (
-            ue_positions[:, 2]
-            if ue_positions.shape[1] > 2
-            else np.zeros(n_ues)
-        )
+        names = ue_names or [f"UE-{i}" for i in range(n_ues)]
+        z_vals = ue_positions[:, 2] if ue_positions.shape[1] > 2 else np.zeros(n_ues)
 
         self._ax3D.scatter(
             ue_positions[:, 0],
@@ -367,7 +375,7 @@ class Urban3DRenderer:
             c=self.config.ue_color,
             s=50,
             marker=self.config.ue_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=0.5,
             alpha=0.9,
         )
@@ -377,10 +385,10 @@ class Urban3DRenderer:
             c=self.config.ue_color,
             s=50,
             marker=self.config.ue_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=0.5,
             alpha=0.9,
-            label='UE',
+            label="UE",
         )
 
         if self.config.show_labels:
@@ -413,7 +421,7 @@ class Urban3DRenderer:
             bs_positions = bs_positions.reshape(1, -1)
 
         n_bs = len(bs_positions)
-        names = bs_names or [f'BS-{i}' for i in range(n_bs)]
+        names = bs_names or [f"BS-{i}" for i in range(n_bs)]
 
         self._ax3D.scatter(
             bs_positions[:, 0],
@@ -422,7 +430,7 @@ class Urban3DRenderer:
             c=self.config.base_station_color,
             s=150,
             marker=self.config.base_station_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=1.5,
         )
         self._ax2D.scatter(
@@ -431,26 +439,23 @@ class Urban3DRenderer:
             c=self.config.base_station_color,
             s=150,
             marker=self.config.base_station_marker,
-            edgecolors='black',
+            edgecolors="black",
             linewidths=1.5,
-            label='BS',
+            label="BS",
         )
 
         segments = [
-            [[pos[0], pos[1], 0.0], [pos[0], pos[1], pos[2]]]
-            for pos in bs_positions
+            [[pos[0], pos[1], 0.0], [pos[0], pos[1], pos[2]]] for pos in bs_positions
         ]
         line_coll = Line3DCollection(
-            segments, colors='g', linestyles='--', alpha=0.5, linewidths=1
+            segments, colors="g", linestyles="--", alpha=0.5, linewidths=1
         )
         self._ax3D.add_collection3d(line_coll)
 
         if self.config.show_labels:
             for i, name in enumerate(names):
                 pos = bs_positions[i]
-                self._ax3D.text(
-                    pos[0], pos[1], pos[2] + 8, name, fontsize=8
-                )
+                self._ax3D.text(pos[0], pos[1], pos[2] + 8, name, fontsize=8)
 
     def _draw_links(self, links: List[Dict]) -> None:
         """Draws communication links using batched line collections.
@@ -465,27 +470,31 @@ class Urban3DRenderer:
         nlos_3d, nlos_2d = [], []
 
         for link in links:
-            src = np.asarray(link['source'])
-            dst = np.asarray(link['target'])
-            is_los = link.get('los', True)
+            src = _safe_to_numpy(link["source"])
+            dst = _safe_to_numpy(link["target"])
+            is_los = link.get("los", True)
             if is_los:
-                los_3d.append([
-                    [src[0], src[1], src[2]],
-                    [dst[0], dst[1], dst[2]],
-                ])
+                los_3d.append(
+                    [
+                        [src[0], src[1], src[2]],
+                        [dst[0], dst[1], dst[2]],
+                    ]
+                )
                 los_2d.append([[src[0], src[1]], [dst[0], dst[1]]])
             else:
-                nlos_3d.append([
-                    [src[0], src[1], src[2]],
-                    [dst[0], dst[1], dst[2]],
-                ])
+                nlos_3d.append(
+                    [
+                        [src[0], src[1], src[2]],
+                        [dst[0], dst[1], dst[2]],
+                    ]
+                )
                 nlos_2d.append([[src[0], src[1]], [dst[0], dst[1]]])
 
         if los_3d:
             coll_3d = Line3DCollection(
                 los_3d,
                 colors=self.config.link_los_color,
-                linestyles='-',
+                linestyles="-",
                 alpha=0.3,
                 linewidths=0.8,
             )
@@ -493,7 +502,7 @@ class Urban3DRenderer:
             coll_2d = LineCollection(
                 los_2d,
                 colors=self.config.link_los_color,
-                linestyles='-',
+                linestyles="-",
                 alpha=0.3,
                 linewidths=0.8,
             )
@@ -503,7 +512,7 @@ class Urban3DRenderer:
             coll_3d = Line3DCollection(
                 nlos_3d,
                 colors=self.config.link_nlos_color,
-                linestyles='--',
+                linestyles="--",
                 alpha=0.15,
                 linewidths=0.8,
             )
@@ -511,7 +520,7 @@ class Urban3DRenderer:
             coll_2d = LineCollection(
                 nlos_2d,
                 colors=self.config.link_nlos_color,
-                linestyles='--',
+                linestyles="--",
                 alpha=0.15,
                 linewidths=0.8,
             )
@@ -527,20 +536,18 @@ class Urban3DRenderer:
             building_faces,
             alpha=self.config.building_alpha,
             facecolor=self.config.building_color,
-            edgecolor='black',
+            edgecolor="black",
             linewidth=0.5,
         )
         self._ax3D.add_collection3d(poly3d)
 
-    def _draw_collisions(
-        self, collisions: Union[List[np.ndarray], np.ndarray]
-    ) -> None:
+    def _draw_collisions(self, collisions: Union[List[np.ndarray], np.ndarray]) -> None:
         """Draws UAV collision points as red cross markers.
 
         Args:
             collisions (Union[List[np.ndarray], np.ndarray]): Array of collision positions.
         """
-        arr = np.asarray(collisions)
+        arr = _safe_to_numpy(collisions)
         if arr.size == 0 or arr.ndim < 2 or arr.shape[0] == 0:
             return
 
@@ -548,27 +555,106 @@ class Urban3DRenderer:
             arr[:, 0],
             arr[:, 1],
             arr[:, 2],
-            c='red',
+            c="red",
             s=250,
-            marker='X',
-            edgecolors='black',
+            marker="X",
+            edgecolors="black",
             linewidths=1.5,
             alpha=0.9,
         )
         self._ax2D.scatter(
             arr[:, 0],
             arr[:, 1],
-            c='red',
+            c="red",
             s=250,
-            marker='X',
-            edgecolors='black',
+            marker="X",
+            edgecolors="black",
             linewidths=1.5,
             alpha=0.9,
-            label='Collision',
+            label="Collision",
         )
 
+    def _draw_telemetry_hud(self, telemetry: Dict) -> None:
+        """Draws real-time 6G Network Digital Twin telemetry HUD on the 3D axes.
+
+        Args:
+            telemetry (Dict): Telemetry metrics payload dictionary.
+        """
+        if not telemetry or self._ax3D is None:
+            return
+
+        lines = ["6G NDT TELEMETRY"]
+        if "completed_tasks" in telemetry:
+            c_tasks = telemetry["completed_tasks"]
+            c_val = sum(c_tasks) if isinstance(c_tasks, list) else c_tasks
+            lines.append(f"Tasks Done: {c_val}")
+        if "dropped_tasks" in telemetry:
+            d_tasks = telemetry["dropped_tasks"]
+            d_val = sum(d_tasks) if isinstance(d_tasks, list) else d_tasks
+            lines.append(f"Tasks Dropped: {d_val}")
+        if "utilization" in telemetry or "mean_utilization" in telemetry:
+            u = telemetry.get("utilization", telemetry.get("mean_utilization"))
+            u_val = (
+                np.mean(u) * 100.0 if isinstance(u, (list, np.ndarray)) else u * 100.0
+            )
+            lines.append(f"MEC Util: {u_val:.1f}%")
+        if "system_time" in telemetry or "mean_system_time" in telemetry:
+            st = telemetry.get("system_time", telemetry.get("mean_system_time"))
+            st_val = np.mean(st) if isinstance(st, (list, np.ndarray)) else st
+            if st_val < 1.0:
+                st_val *= 1000.0
+            lines.append(f"MEC Delay: {st_val:.1f}ms")
+        if "coverage_ratio" in telemetry:
+            lines.append(f"Coverage: {telemetry['coverage_ratio'] * 100.0:.1f}%")
+        if "sojourn_time" in telemetry:
+            sj = telemetry["sojourn_time"]
+            sj_val = np.mean(sj) if isinstance(sj, (list, np.ndarray)) else sj
+            lines.append(f"Sojourn: {sj_val:.1f} steps")
+
+        hud_text = "\n".join(lines)
+        self._ax3D.text2D(
+            0.02,
+            0.95,
+            hud_text,
+            transform=self._ax3D.transAxes,
+            fontsize=self.config.hud_fontsize,
+            fontfamily="monospace",
+            verticalalignment="top",
+            bbox={
+                "boxstyle": "round,pad=0.4",
+                "facecolor": "#1e1e1e",
+                "alpha": 0.75,
+                "edgecolor": "#555555",
+            },
+            color="#00FFCC",
+        )
+
+    def _draw_rem_contours(
+        self, rem_data: Union[np.ndarray, torch.Tensor], volume_size: List[float]
+    ) -> None:
+        """Draws Radio Environment Map (REM) SINR contour lines on the 2D axes.
+
+        Args:
+            rem_data (Union[np.ndarray, torch.Tensor]): 2D SINR grid values.
+            volume_size (List[float]): Urban environment dimensions [x, y, z].
+        """
+        if self._ax2D is None or rem_data is None:
+            return
+        rem_np = _safe_to_numpy(rem_data)
+
+        if rem_np.ndim != 2 or rem_np.size == 0:
+            return
+
+        x = np.linspace(-volume_size[0] / 2, volume_size[0] / 2, rem_np.shape[0])
+        y = np.linspace(-volume_size[1] / 2, volume_size[1] / 2, rem_np.shape[1])
+        xx, yy = np.meshgrid(x, y, indexing="ij")
+        cs = self._ax2D.contour(
+            xx, yy, rem_np, levels=4, cmap="viridis", alpha=0.6, linewidths=1.0
+        )
+        self._ax2D.clabel(cs, inline=True, fontsize=6, fmt="%.0fdB")
+
     def render(
-        self, state: Dict, mode: str = 'rgb_array'
+        self, state: Dict, mode: str = "rgb_array"
     ) -> Optional[Union[np.ndarray, object]]:
         """Renders the urban environment.
 
@@ -589,46 +675,57 @@ class Urban3DRenderer:
             Optional[Union[np.ndarray, object]]: RGB image numpy array if mode=='rgb_array',
                 or matplotlib Figure handle if mode=='human'.
         """
-        volume_size = state.get('volume_size', [500, 500, 200])
+        volume_size = state.get("volume_size", [500, 500, 200])
 
         if self._fig is not None:
-            self._plt.close('all')
+            self._plt.close("all")
             self._fig = None
             self._ax3D = None
             self._ax2D = None
-        
+
         if self._fig is None:
             self._init_plot(volume_size)
-        
-        if 'current_frame' in state and state['current_frame'] == 0:
+
+        if "current_frame" in state and state["current_frame"] == 0:
             self._trajectories.clear()
             self._frame_count = 0
 
-        if 'heatmap' in state:
-            self._draw_heatmap(state['heatmap'], volume_size)
+        if "heatmap" in state:
+            self._draw_heatmap(state["heatmap"], volume_size)
 
-        if 'building_faces' in state:
-            self._building_faces(state['building_faces'])
-        elif 'buildings' in state:
-            self._draw_buildings(state['buildings'])
+        if "building_faces" in state:
+            self._building_faces(state["building_faces"])
+        elif "buildings" in state:
+            self._draw_buildings(state["buildings"])
 
-        if 'base_station_positions' in state:
-            self._draw_base_stations(state['base_station_positions'])
+        if "base_station_positions" in state:
+            self._draw_base_stations(state["base_station_positions"])
 
-        if 'ue_positions' in state:
-            self._draw_ues(state['ue_positions'])
+        if "ue_positions" in state:
+            self._draw_ues(state["ue_positions"])
 
-        if 'uav_positions' in state:
-            self._draw_uavs(state['uav_positions'])
+        if "uav_positions" in state:
+            self._draw_uavs(state["uav_positions"])
 
-        if 'links' in state:
-            self._draw_links(state['links'])
+        if "links" in state:
+            self._draw_links(state["links"])
 
-        if 'collisions' in state:
-            self._draw_collisions(state['collisions'])
+        if "collisions" in state:
+            self._draw_collisions(state["collisions"])
+
+        if self.config.show_telemetry_hud:
+            telemetry = state.get(
+                "telemetry",
+                state.get("ndt_telemetry", state.get("mec_telemetry", None)),
+            )
+            if telemetry is not None:
+                self._draw_telemetry_hud(telemetry)
+
+        if self.config.show_rem_contours and "rem_sinr" in state:
+            self._draw_rem_contours(state["rem_sinr"], volume_size)
 
         title = state.get(
-            'title', f'UrbanMARL 3D Environment - Frame {self._frame_count}'
+            "title", f"UrbanMARL 3D Environment - Frame {self._frame_count}"
         )
         self._fig.suptitle(title)
 
@@ -637,13 +734,13 @@ class Urban3DRenderer:
 
         self._frame_count += 1
 
-        if mode == 'rgb_array':
+        if mode == "rgb_array":
             self._fig.tight_layout()
             self._fig.canvas.draw()
             buf = np.frombuffer(self._fig.canvas.buffer_rgba(), dtype=np.uint8)
             buf = buf.reshape(self._fig.canvas.get_width_height()[::-1] + (4,))
             return buf[..., :3]
-        elif mode == 'human':
+        elif mode == "human":
             return self._fig
 
     def close(self) -> None:

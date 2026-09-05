@@ -6,7 +6,6 @@
 import importlib
 
 import pytest
-
 from benchmarl.experiment import ExperimentConfig
 from benchmarl.models import CnnConfig, GnnConfig, GruConfig, LstmConfig, MlpConfig
 from benchmarl.models.common import ModelConfig, SequenceModelConfig
@@ -42,7 +41,6 @@ def experiment_config(tmp_path) -> ExperimentConfig:
     experiment_config.evaluation = True
     experiment_config.render = True
     experiment_config.evaluation_episodes = 2
-
 
     experiment_config.evaluation_interval = 500
     experiment_config.evaluation_static = False

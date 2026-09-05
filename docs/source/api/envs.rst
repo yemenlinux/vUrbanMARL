@@ -16,3 +16,11 @@ Base Environment
    :members:
    :undoc-members:
    :show-inheritance:
+
+PettingZoo Wrapper
+------------------
+
+.. automodule:: urbanmarl.envs.pettingzoo_wrapper
+   :members:
+   :undoc-members:
+   :show-inheritance:

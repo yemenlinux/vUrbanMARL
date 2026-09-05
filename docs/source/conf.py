@@ -5,12 +5,12 @@ from pathlib import Path
 
 # Fix locale error on Linux systems with unset/invalid environment locales
 try:
-    locale.setlocale(locale.LC_ALL, '')
+    locale.setlocale(locale.LC_ALL, "")
 except locale.Error:
     try:
-        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        locale.setlocale(locale.LC_ALL, "C.UTF-8")
     except locale.Error:
-        locale.setlocale(locale.LC_ALL, 'C')
+        locale.setlocale(locale.LC_ALL, "C")
 
 # Add project root to sys.path so autodoc can locate urbanmarl package
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.resolve()))

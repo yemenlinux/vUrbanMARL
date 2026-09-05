@@ -101,7 +101,7 @@ def _add_rnn_transforms(
                 group: Composite(
                     model_config._get_model_state_spec_inner(group=group).expand(
                         len(agents),
-                        *model_config._get_model_state_spec_inner(group=group).shape
+                        *model_config._get_model_state_spec_inner(group=group).shape,
                     ),
                     shape=(len(agents),),
                 )

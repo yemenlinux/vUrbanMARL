@@ -9,7 +9,9 @@ def urban_map():
     batch_size = 2
     volume_size = (200, 200, 100)
     device = torch.device("cpu")
-    umap = VectorizedUrbanMap(batch_size=batch_size, volume_size=volume_size, device=device)
+    umap = VectorizedUrbanMap(
+        batch_size=batch_size, volume_size=volume_size, device=device
+    )
     umap.generate_batch_maps()
     return umap
 
@@ -21,7 +23,9 @@ def test_urban_map_init():
     batch_size = 3
     volume_size = (300, 300, 150)
     device = torch.device("cpu")
-    umap = VectorizedUrbanMap(batch_size=batch_size, volume_size=volume_size, device=device)
+    umap = VectorizedUrbanMap(
+        batch_size=batch_size, volume_size=volume_size, device=device
+    )
 
     assert umap.batch_size == 3
     assert umap.volume_size == (300, 300, 150)
@@ -54,8 +58,12 @@ def test_check_los_batch_clear_vs_blocked(urban_map):
     num_targets = 2
 
     # High altitude positions above any procedural building height (z = 200.0)
-    p1 = torch.tensor([[[0.0, 0.0, 200.0], [50.0, 50.0, 200.0]]]).expand(batch_size, num_agents, 3)
-    p2 = torch.tensor([[[10.0, 10.0, 200.0], [60.0, 60.0, 200.0]]]).expand(batch_size, num_targets, 3)
+    p1 = torch.tensor([[[0.0, 0.0, 200.0], [50.0, 50.0, 200.0]]]).expand(
+        batch_size, num_agents, 3
+    )
+    p2 = torch.tensor([[[10.0, 10.0, 200.0], [60.0, 60.0, 200.0]]]).expand(
+        batch_size, num_targets, 3
+    )
 
     los_matrix = urban_map.check_los_batch(p1, p2, n_steps=10)
 
@@ -92,7 +100,9 @@ def test_position_normalization_roundtrip(urban_map):
     Tests position normalization (norm_pos) and denormalization (denorm_pos),
     verifying exact spatial recovery.
     """
-    positions = torch.tensor([[[0.0, 0.0, 50.0], [50.0, -50.0, 25.0]]]).expand(urban_map.batch_size, 2, 3)
+    positions = torch.tensor([[[0.0, 0.0, 50.0], [50.0, -50.0, 25.0]]]).expand(
+        urban_map.batch_size, 2, 3
+    )
 
     norm_p = urban_map.norm_pos(positions)
     assert (norm_p[..., 0] >= 0.0).all() and (norm_p[..., 0] <= 1.0).all()
@@ -125,7 +135,9 @@ def test_pos_to_grid_clamping(urban_map):
     Tests pos_to_grid physical position to grid index conversion with boundary clamping.
     """
     # Out of bounds positions
-    positions = torch.tensor([[[-1000.0, -1000.0, 0.0], [1000.0, 1000.0, 0.0]]]).expand(urban_map.batch_size, 2, 3)
+    positions = torch.tensor([[[-1000.0, -1000.0, 0.0], [1000.0, 1000.0, 0.0]]]).expand(
+        urban_map.batch_size, 2, 3
+    )
     grid = urban_map.pos_to_grid(positions)
 
     assert (grid[..., 0] >= 0).all() and (grid[..., 0] < urban_map.sim_x).all()

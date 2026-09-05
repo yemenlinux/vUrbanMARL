@@ -4,7 +4,6 @@ Compiles image frame collections into standardized MP4 videos with auto-scaling 
 """
 
 import argparse
-import os
 import re
 from pathlib import Path
 
@@ -28,12 +27,10 @@ def generate_mp4_from_pngs(image_dir: str, output_path: str, fps: int) -> None:
     image_files = list(directory.glob("*.png"))
 
     if not image_files:
-        raise FileNotFoundError(
-            f"No PNG files found in the directory: {directory}"
-        )
+        raise FileNotFoundError(f"No PNG files found in the directory: {directory}")
 
     def extract_number(filepath: Path) -> int:
-        numbers = re.findall(r'\d+', filepath.name)
+        numbers = re.findall(r"\d+", filepath.name)
         return int(numbers[-1]) if numbers else 0
 
     image_files.sort(key=extract_number)
@@ -52,16 +49,10 @@ def generate_mp4_from_pngs(image_dir: str, output_path: str, fps: int) -> None:
     target_h = max_h if max_h % 2 == 0 else max_h + 1
     target_size = (target_w, target_h)
 
-    print(
-        f"Compiling {len(image_files)} images into {output_path} at {fps} FPS..."
-    )
-    print(
-        f"Standardizing all frames to the maximum size: {target_w}x{target_h}..."
-    )
+    print(f"Compiling {len(image_files)} images into {output_path} at {fps} FPS...")
+    print(f"Standardizing all frames to the maximum size: {target_w}x{target_h}...")
 
-    with imageio.get_writer(
-        output_path, fps=fps, macro_block_size=None
-    ) as writer:
+    with imageio.get_writer(output_path, fps=fps, macro_block_size=None) as writer:
         for image_path in image_files:
             img = imageio.imread(image_path)
 

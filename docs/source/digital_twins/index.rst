@@ -10,6 +10,8 @@ and aerial networks:
    :maxdepth: 2
 
    geospatial
+   aerodynamics
+   lidar
    mobility
    radio_network
    mec_queue

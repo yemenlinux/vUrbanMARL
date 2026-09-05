@@ -1,8 +1,8 @@
-import pytest
-
-import sys
 import os
+import sys
 from pathlib import Path
+
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -15,6 +15,7 @@ from urbanmarl.envs.base_env import UrbanEnv
 from urbanmarl.scenarios import _registry, load_scenario
 
 # ---------- Fixtures ----------
+
 
 @pytest.fixture
 def base_config():
@@ -32,10 +33,12 @@ def base_config():
         "noise_figure_db": 7.0,
     }
 
+
 @pytest.fixture(params=list(_registry.keys()))
 def scenario_name(request):
     """Parametrize over all registered scenarios."""
     return request.param
+
 
 @pytest.fixture
 def env(scenario_name, base_config):
@@ -49,7 +52,9 @@ def env(scenario_name, base_config):
         **base_config,
     )
 
+
 # ---------- Tests ----------
+
 
 def test_env_creation(env, scenario_name):
     """Environment should be created with correct batch size and scenario name."""
@@ -100,11 +105,12 @@ def test_rollout(env):
 
 def test_check_env_specs(env):
     """The environment's specs must be internally consistent (no errors)."""
-    assert env.check_env_specs() == None
+    assert env.check_env_specs() is None
 
 
 def test_fake_tensordict(env):
     from tensordict import TensorDictBase
+
     """fake_tensordict should match the specs and be usable in step."""
     _ = env.reset()
     fake = env.fake_tensordict()
@@ -159,17 +165,20 @@ def test_scenario_specs_match_actual_data(env):
         obs_spec = env.scenario.observation_spec(env, group)
         obs_data = td.get(group)["observation"]
         # Check shape (ignoring batch dims)
-        assert obs_data.shape[2:] == obs_spec.shape, \
-            f"Observation shape mismatch for group {group}: spec {obs_spec.shape}, data {obs_data.shape[2:]}"
-        assert obs_data.dtype == obs_spec.dtype, \
-            f"Observation dtype mismatch for group {group}: spec {obs_spec.dtype}, data {obs_data.dtype}"
+        assert (
+            obs_data.shape[2:] == obs_spec.shape
+        ), f"Observation shape mismatch for group {group}: spec {obs_spec.shape}, data {obs_data.shape[2:]}"
+        assert (
+            obs_data.dtype == obs_spec.dtype
+        ), f"Observation dtype mismatch for group {group}: spec {obs_spec.dtype}, data {obs_data.dtype}"
 
     # Check global state if present
     if env.scenario.has_state:
         state_spec = env.scenario.state_spec(env)
         state_data = td["state"]
-        assert state_data.shape[1:] == state_spec.shape, \
-            f"State shape mismatch: spec {state_spec.shape}, data {state_data.shape[1:]}"
+        assert (
+            state_data.shape[1:] == state_spec.shape
+        ), f"State shape mismatch: spec {state_spec.shape}, data {state_data.shape[1:]}"
         assert state_data.dtype == state_spec.dtype
 
     # Check global info if present
@@ -179,25 +188,30 @@ def test_scenario_specs_match_actual_data(env):
         # info_spec is a Composite; we check each subkey
         for key, spec in info_spec.items():
             data = info_data[key]
-            assert data.shape[1:] == spec.shape, \
-                f"Global info '{key}' shape mismatch: spec {spec.shape}, data {data.shape[1:]}"
+            assert (
+                data.shape[1:] == spec.shape
+            ), f"Global info '{key}' shape mismatch: spec {spec.shape}, data {data.shape[1:]}"
             assert data.dtype == spec.dtype
 
     # Check agent info if present
     if env.scenario.has_agent_info:
-        info_spec = env.scenario.info_agent_spec(env, group)  # same for all groups in simple case
+        info_spec = env.scenario.info_agent_spec(
+            env, group
+        )  # same for all groups in simple case
         for group, agent_names in env.group_map.items():
             info_data = td.get(group)["info"]
             for key, spec in info_spec.items():
                 data = info_data[key]
                 # data shape: (batch, n_agents_in_group, ...)
-                assert data.shape[2:] == spec.shape, \
-                    f"Agent info '{key}' shape mismatch for group {group}: spec {spec.shape}, data {data.shape[2:]}"
+                assert (
+                    data.shape[2:] == spec.shape
+                ), f"Agent info '{key}' shape mismatch for group {group}: spec {spec.shape}, data {data.shape[2:]}"
                 assert data.dtype == spec.dtype
 
 
 # ---------- Optional: Test specific scenario edge cases ----------
 # If some scenarios require special handling, add them here.
+
 
 def test_navigate_scenario_specific(env, scenario_name):
     """Additional checks for the 'navigate' scenario."""
@@ -209,4 +223,4 @@ def test_navigate_scenario_specific(env, scenario_name):
         for group in env.group_map.keys():
             info = td.get(group)["info"]
             assert "collision" in info.keys()
-            assert "velocity_norm" in info.keys() 
+            assert "velocity_norm" in info.keys()

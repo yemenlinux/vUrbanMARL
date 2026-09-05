@@ -11,7 +11,7 @@ import torch
 from tensordict import TensorDictBase
 from torchrl.data import Composite
 
-from urbanmarl.envs.rendering import Urban3DRenderer, UrbanRenderConfig
+from urbanmarl.envs.rendering import Urban3DRenderer
 
 
 class UrbanScenario(ABC):
@@ -153,7 +153,9 @@ class UrbanScenario(ABC):
         if not hasattr(self, "renderer"):
             self.renderer = Urban3DRenderer()
         if not hasattr(self, "render_idx"):
-            self.render_idx = np.random.randint(env.batch_size[0])
+            self.render_idx = torch.randint(
+                0, env.batch_size[0], (1,), device=env.device
+            ).item()
 
         alpha, beta, gamma, e = env._env.info[self.render_idx][:4]
         scenario_name = env.scenario_name.upper()

@@ -30,15 +30,20 @@ def test_compute_delays_output_dictionary(mec_queue):
     batch_size = 3
     num_uavs = 4
 
-    arrival_rates = torch.tensor([[5.0, 10.0, 15.0, 20.0],
-                                  [2.0,  4.0,  6.0,  8.0],
-                                  [1.0,  2.0,  3.0,  4.0]])  # (B, N)
+    arrival_rates = torch.tensor(
+        [[5.0, 10.0, 15.0, 20.0], [2.0, 4.0, 6.0, 8.0], [1.0, 2.0, 3.0, 4.0]]
+    )  # (B, N)
     service_rates = torch.full((batch_size, num_uavs), 10.0)  # (B, N)
     num_cores = torch.full((batch_size, num_uavs), 4, dtype=torch.long)  # (B, N)
 
     metrics = mec_queue.compute_delays(arrival_rates, service_rates, num_cores)
 
-    required_keys = {"utilization", "avg_queue_length", "avg_waiting_time", "avg_system_time"}
+    required_keys = {
+        "utilization",
+        "avg_queue_length",
+        "avg_waiting_time",
+        "avg_system_time",
+    }
     assert set(metrics.keys()) == required_keys
 
     for key, tensor in metrics.items():
@@ -106,4 +111,7 @@ def test_multicore_scaling(mec_queue):
     metrics_multi = mec_queue.compute_delays(arrival_rates, service_rates, multi_core)
 
     assert metrics_multi["utilization"].item() < metrics_single["utilization"].item()
-    assert metrics_multi["avg_waiting_time"].item() < metrics_single["avg_waiting_time"].item()
+    assert (
+        metrics_multi["avg_waiting_time"].item()
+        < metrics_single["avg_waiting_time"].item()
+    )

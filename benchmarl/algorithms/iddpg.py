@@ -36,7 +36,7 @@ class Iddpg(Algorithm):
         loss_function: str,
         delay_value: bool,
         use_tanh_mapping: bool,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
 

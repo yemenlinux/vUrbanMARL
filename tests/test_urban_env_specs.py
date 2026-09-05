@@ -31,7 +31,7 @@ def test_urbanmarl_env_specs():
         seed=42,
         device=device,
         scenario="default",
-        **config
+        **config,
     )
 
     # Check specs natively
@@ -52,7 +52,9 @@ def test_urbanmarl_env_specs():
 
     assert "done" in td_step.keys()
     group = list(env.group_map.keys())[0]
-    assert ("next", group, "reward") in td_step.keys(True, True) or "reward" in td_step.get(("next", group), {}).keys()
+    assert ("next", group, "reward") in td_step.keys(
+        True, True
+    ) or "reward" in td_step.get(("next", group), {}).keys()
 
 
 if __name__ == "__main__":

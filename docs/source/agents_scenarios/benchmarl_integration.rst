@@ -19,8 +19,11 @@ The integration is structured into three main layers:
    Exposes standard urban scenario tasks:
    - `UrbanEnvTask.UAV_NAVIGATION`: UAV 3D obstacle avoidance and waypoint navigation.
    - `UrbanEnvTask.UAV_UE_LOS`: Dynamic UAV-UE line-of-sight link maintenance.
-   - `UrbanEnvTask.UAVMEC_OFFLOADING`: UAV-assisted MEC task offloading and resource allocation.
    - `UrbanEnvTask.COVERAGE`: Area coverage and user equipment service maximization.
+   - `UrbanEnvTask.UAVMEC_OFFLOADING`: UAV-assisted MEC task offloading and resource allocation.
+   - `UrbanEnvTask.UAV_MOBILE_UE`: Dynamic user mobility tracking under Gauss-Markov / Manhattan models.
+   - `UrbanEnvTask.UAV_LIDAR_NAVIGATION`: Safe urban canyon navigation with 360° LiDAR ray-casting.
+   - `UrbanEnvTask.UAVMEC_ADVANCED_PHYSICS`: Aerodynamics power dissipation and 3D directional antennas.
 
 Code Example: Training MADDPG on Urban Navigation
 -------------------------------------------------
@@ -100,6 +103,58 @@ To train **MAPPO** on the `UAVMEC_OFFLOADING` task:
        model_config=model_config,
        critic_model_config=model_config,
        seed=0,
+       config=ExperimentConfig.get_from_yaml(),
+   )
+   experiment.run()
+
+Code Example: MADDPG on High-Fidelity Physics
+----------------------------------------------
+
+Train **MADDPG** with aerodynamic flight power dissipation and 3GPP directional beamforming:
+
+.. code-block:: python
+
+   from benchmarl.algorithms import MaddpgConfig
+   from benchmarl.environments import UrbanEnvTask
+   from benchmarl.experiment import Experiment, ExperimentConfig
+   from benchmarl.models.mlp import MlpConfig
+
+   task = UrbanEnvTask.UAVMEC_ADVANCED_PHYSICS.get_from_yaml()
+   algo_config = MaddpgConfig.get_from_yaml()
+   model_config = MlpConfig.get_from_yaml()
+
+   experiment = Experiment(
+       task=task,
+       algorithm_config=algo_config,
+       model_config=model_config,
+       critic_model_config=model_config,
+       seed=0,
+       config=ExperimentConfig.get_from_yaml(),
+   )
+   experiment.run()
+
+Code Example: MASAC on LiDAR Urban Canyon Navigation
+-----------------------------------------------------
+
+Train **MASAC** (Multi-Agent Soft Actor-Critic) on POMDP LiDAR rangefinder navigation:
+
+.. code-block:: python
+
+   from benchmarl.algorithms import MasacConfig
+   from benchmarl.environments import UrbanEnvTask
+   from benchmarl.experiment import Experiment, ExperimentConfig
+   from benchmarl.models.mlp import MlpConfig
+
+   task = UrbanEnvTask.UAV_LIDAR_NAVIGATION.get_from_yaml()
+   algo_config = MasacConfig.get_from_yaml()
+   model_config = MlpConfig.get_from_yaml()
+
+   experiment = Experiment(
+       task=task,
+       algorithm_config=algo_config,
+       model_config=model_config,
+       critic_model_config=model_config,
+       seed=42,
        config=ExperimentConfig.get_from_yaml(),
    )
    experiment.run()

@@ -1,6 +1,6 @@
 # An example experiment script of Victorized Urban Multi-Agent Simulation (VUMAS).
-import sys
 import os
+import sys
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent
@@ -8,50 +8,49 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 #
 import warnings
+
 # Suppress the specific future warning from torchrl
 warnings.filterwarnings(
-    "ignore", 
-    category=FutureWarning, 
-    module="torchrl.modules.mcts.scores"
+    "ignore", category=FutureWarning, module="torchrl.modules.mcts.scores"
 )
 # Suppress the tensordict to_module warning
 warnings.filterwarnings(
     "ignore",
     message=".*TensorDict.to_module().*",
     category=FutureWarning,
-    module="tensordict"
+    module="tensordict",
 )
 #
 import hydra
-from omegaconf import DictConfig
 import torch
 from benchmarl.algorithms import (
-    # full observation in critic
-    MappoConfig,
-    MaddpgConfig,
-    MasacConfig, 
+    IddpgConfig,
     # no full observation in critic
     IppoConfig,
-    IddpgConfig,
     IsacConfig,
+    MaddpgConfig,
+    # full observation in critic
+    MappoConfig,
+    MasacConfig,
     # Discrete only
-    #QmixConfig
+    # QmixConfig
 )
 
-from benchmarl.environments import VmasTask
-from benchmarl.experiment import Experiment, ExperimentConfig
-from benchmarl.models.mlp import MlpConfig
 # from benchmarl.environments import TaskRegistry
 
 # from urbanmarl.tasks.common import UrbanEnvTask
-from benchmarl.environments import UrbanEnvTask
+
+from benchmarl.environments import UrbanEnvTask, VmasTask
+from benchmarl.experiment import Experiment, ExperimentConfig
+from benchmarl.models.mlp import MlpConfig
+from omegaconf import DictConfig
+
 # Callback
 from urbanmarl.callback.evaluate_los_per_urban import EvaluateLoS
 
-
 if __name__ == "__main__":
     # main()
-    
+
     # Loads from "../conf/experiment/base_experiment.yaml"
     experiment_config = ExperimentConfig.get_from_yaml()
     # configure absolute save_folder to ../results/ for easier access
@@ -62,7 +61,7 @@ if __name__ == "__main__":
         experiment_config.device = "cuda"
         experiment_config.sampling_device = "cuda"
         experiment_config.train_device = "cuda"
-        # experiment_config.buffer_device = "cuda"
+        experiment_config.buffer_device = "cuda"
     experiment_config.max_n_iters = 3
     experiment_config.parallel_collection = True
     experiment_config.checkpoint_at_end = True
@@ -71,16 +70,19 @@ if __name__ == "__main__":
     # task = UrbanEnvTask.UAVMEC_OFFLOADING.get_from_yaml()
     # task = UrbanEnvTask.UAV_NAVIGATION.get_from_yaml()
     # task = UrbanEnvTask.UAV_UE_LOS.get_from_yaml()
-    task = UrbanEnvTask.COVERAGE.get_from_yaml()
-    
+    # task = UrbanEnvTask.COVERAGE.get_from_yaml()
+    task = UrbanEnvTask.UAV_MOBILE_UE.get_from_yaml()
+    # task = UrbanEnvTask.UAV_LIDAR_NAVIGATION.get_from_yaml()
+    # task = UrbanEnvTask.UAVMEC_ADVANCED_PHYSICS.get_from_yaml()
+
     # Configure candidate algorithmic structures
     # algorithm_config = MappoConfig.get_from_yaml()
     algorithm_config = MaddpgConfig.get_from_yaml()
-    
+
     # Loads from "benchmarl/conf/model/layers/mlp.yaml"
     model_config = MlpConfig.get_from_yaml()
     critic_model_config = MlpConfig.get_from_yaml()
-    
+
     experiment = Experiment(
         task=task,
         algorithm_config=algorithm_config,

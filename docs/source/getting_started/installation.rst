@@ -6,9 +6,9 @@ UrbanMARL requires Python 3.10 or newer. Due to the heavy reliance on PyTorch an
 
 We provide two primary methods for installation: utilizing the modern ``uv`` package manager (recommended for faster dependency resolution) or utilizing the standard ``pip`` installer.
 
----------------------------------
+-------------------------------------------------
 Method 1: Installation using `uv` (Recommended)
----------------------------------
+-------------------------------------------------
 
 `uv` is an extremely fast Python package installer. UrbanMARL's configuration is optimized for `uv`, allowing it to automatically route PyTorch dependencies to the correct hardware-specific index without requiring manual URL flags.
 
@@ -44,9 +44,9 @@ Once installed, you can install UrbanMARL directly by specifying your target har
 
     uv pip install urbanmarl[cuda132]
 
----------------------------------------
+-------------------------------------------
 Method 2: Installation using standard `pip`
----------------------------------------
+-------------------------------------------
 
 If you prefer to use the standard Python package installer (``pip``), you must explicitly provide the extra index URL. This ensures ``pip`` fetches the correct hardware-specific PyTorch binaries instead of defaulting to the standard PyPI release.
 
@@ -107,4 +107,3 @@ Using ``pip`` (for CUDA 12.6):
 .. code-block:: bash
 
     pip install -e .[cuda126,test,docs] --extra-index-url https://download.pytorch.org/whl/cu126
-

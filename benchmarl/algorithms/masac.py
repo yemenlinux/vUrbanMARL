@@ -129,9 +129,11 @@ class Masac(Algorithm):
                 )
             loss_module = DiscreteSACLoss(
                 actor_network=policy_for_loss,
-                qvalue_network=self.get_discrete_value_module_decoupled(group)
-                if not self.coupled_discrete_values
-                else self.get_discrete_value_module_coupled(group),
+                qvalue_network=(
+                    self.get_discrete_value_module_decoupled(group)
+                    if not self.coupled_discrete_values
+                    else self.get_discrete_value_module_coupled(group)
+                ),
                 num_qvalue_nets=self.num_qvalue_nets,
                 loss_function=self.loss_function,
                 alpha_init=self.alpha_init,

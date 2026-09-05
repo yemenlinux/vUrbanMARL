@@ -8,7 +8,6 @@ from typing import Callable, Dict, List, Optional
 
 import torch
 from tensordict import TensorDictBase
-
 from torchrl.data import Composite
 from torchrl.envs import (
     DoubleToFloat,

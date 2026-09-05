@@ -75,7 +75,9 @@ def test_los_vs_nlos_data_rates(channel_model):
     los_mask_false = torch.tensor([[[False]]])
 
     rate_los = channel_model.compute_data_rates(tx_pos, rx_pos, tx_power, los_mask_true)
-    rate_nlos = channel_model.compute_data_rates(tx_pos, rx_pos, tx_power, los_mask_false)
+    rate_nlos = channel_model.compute_data_rates(
+        tx_pos, rx_pos, tx_power, los_mask_false
+    )
 
     assert rate_los.item() > rate_nlos.item()
 

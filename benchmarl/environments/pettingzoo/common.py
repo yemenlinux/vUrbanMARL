@@ -11,7 +11,6 @@ from torchrl.data import Composite
 from torchrl.envs import EnvBase, PettingZooEnv
 
 from benchmarl.environments.common import Task, TaskClass
-
 from benchmarl.utils import DEVICE_TYPING
 
 
@@ -33,7 +32,7 @@ class PettingZooClass(TaskClass):
             parallel=True,
             return_state=self.has_state(),
             render_mode="rgb_array",
-            **config
+            **config,
         )
 
     def supports_continuous_actions(self) -> bool:

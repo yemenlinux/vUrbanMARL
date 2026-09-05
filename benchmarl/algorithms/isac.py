@@ -64,7 +64,7 @@ class Isac(Algorithm):
         fixed_alpha: bool,
         scale_mapping: str,
         use_tanh_normal: bool,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
 

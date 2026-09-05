@@ -2,7 +2,15 @@ import pytest
 import torch
 from tensordict import TensorDict
 from torchrl.data import Composite
-from urbanmarl.scenarios import _registry, load_scenario, register_scenario, UrbanScenario
+from urbanmarl.scenarios import (
+    _registry,
+    auto_register_scenarios,
+    get_scenario_class,
+    list_scenarios,
+    load_scenario,
+    register_scenario,
+    UrbanScenario,
+)
 
 
 @pytest.fixture
@@ -105,4 +113,67 @@ def test_scenario_mocked_step_execution(scenario_name, base_scenario_config):
     # 4. Check group rewards and observations
     for group in env.group_map.keys():
         group_td = td_next.get(("next", group), default=td_next.get(group))
-        assert "reward" in group_td.keys() or ("next", group, "reward") in td_next.keys(True, True)
+        assert "reward" in group_td.keys() or ("next", group, "reward") in td_next.keys(
+            True, True
+        )
+
+
+def test_dynamic_auto_registration():
+    """Verifies that auto_register_scenarios finds and registers concrete scenarios."""
+    scenarios = list_scenarios()
+    expected = [
+        "coverage",
+        "default",
+        "uav_lidar_navigation",
+        "uav_mobile_ue",
+        "uav_navigation",
+        "uav_ue_los",
+        "uavmec_advanced_physics",
+        "uavmec_offloading",
+    ]
+    for exp in expected:
+        assert exp in scenarios
+        cls = get_scenario_class(exp)
+        assert issubclass(cls, UrbanScenario)
+
+
+def test_custom_scenario_registration(base_scenario_config):
+    """Verifies that a custom subclass of UrbanScenario can be dynamically registered and loaded."""
+    from urbanmarl.scenarios.default import Scenario as DefaultScenario
+
+    class CustomTestScenario(DefaultScenario):
+        pass
+
+    register_scenario("custom_test_env", CustomTestScenario, aliases=["custom_alias"])
+    assert "custom_test_env" in list_scenarios()
+    assert "custom_alias" in list_scenarios()
+
+    inst = load_scenario("custom_test_env", base_scenario_config)
+    assert isinstance(inst, CustomTestScenario)
+
+    inst_alias = load_scenario("custom_alias", base_scenario_config)
+    assert isinstance(inst_alias, CustomTestScenario)
+
+
+def test_invalid_registration():
+    """Verifies that invalid or abstract classes raise TypeError on registration."""
+
+    class NotAScenario:
+        pass
+
+    with pytest.raises(TypeError, match="must be a subclass of UrbanScenario"):
+        register_scenario("invalid_cls", NotAScenario)
+
+    with pytest.raises(TypeError, match="Cannot register abstract scenario class"):
+        register_scenario("abstract_base", UrbanScenario)
+
+
+def test_backward_compatibility_getattr():
+    """Verifies that legacy PascalCase scenario class names are accessible via __getattr__."""
+    import urbanmarl.scenarios as scenarios_mod
+
+    assert hasattr(scenarios_mod, "NavigationScenario")
+    assert hasattr(scenarios_mod, "DefaultScenario")
+    assert hasattr(scenarios_mod, "UAVMECScenario")
+    assert hasattr(scenarios_mod, "UavMecAdvancedPhysicsScenario")
+    assert hasattr(scenarios_mod, "CoverageScenario")

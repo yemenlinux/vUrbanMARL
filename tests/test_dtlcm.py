@@ -39,9 +39,9 @@ def test_dtlcm_spatial_distance_priority():
     num_ues = 1
 
     # Place UAV 0 at (0, 0), UAV 1 at (100, 100), UAV 2 at (500, 500)
-    uav_pos = torch.tensor([[[0.0, 0.0, 50.0],
-                             [100.0, 100.0, 50.0],
-                             [500.0, 500.0, 50.0]]])
+    uav_pos = torch.tensor(
+        [[[0.0, 0.0, 50.0], [100.0, 100.0, 50.0], [500.0, 500.0, 50.0]]]
+    )
     # Place UE at (10.0, 10.0) - closest to UAV 0
     ue_pos = torch.tensor([[[10.0, 10.0, 0.0]]])
 
@@ -66,8 +66,7 @@ def test_dtlcm_capability_priority():
     num_ues = 1
 
     # UAV 0 is close, but has low capacity (1.0). UAV 1 is far, but has high capacity (100.0).
-    uav_pos = torch.tensor([[[0.0, 0.0, 50.0],
-                             [500.0, 500.0, 50.0]]])
+    uav_pos = torch.tensor([[[0.0, 0.0, 50.0], [500.0, 500.0, 50.0]]])
     ue_pos = torch.tensor([[[0.0, 0.0, 0.0]]])
 
     uav_caps = torch.tensor([[1.0, 100.0]])

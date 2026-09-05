@@ -10,11 +10,9 @@ from typing import Dict, Iterable, Optional, Tuple, Type
 
 from tensordict import TensorDictBase
 from tensordict.nn import TensorDictModule
-
 from torchrl.objectives import LossModule
 
 from benchmarl.algorithms.common import Algorithm, AlgorithmConfig
-
 from benchmarl.models.common import ModelConfig
 
 

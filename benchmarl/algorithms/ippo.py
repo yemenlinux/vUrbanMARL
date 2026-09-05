@@ -53,7 +53,7 @@ class Ippo(Algorithm):
         scale_mapping: str,
         use_tanh_normal: bool,
         minibatch_advantage: bool,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
 

@@ -8,7 +8,6 @@ from dataclasses import dataclass, MISSING
 from typing import List, Optional, Sequence, Tuple, Type, Union
 
 import torch
-
 from tensordict import TensorDictBase
 from torch import nn
 from torchrl.modules import ConvNet, MLP, MultiAgentConvNet, MultiAgentMLP

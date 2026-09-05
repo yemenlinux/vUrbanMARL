@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 import torch
 from urbanmarl.envs.rendering import Urban3DRenderer, UrbanRenderConfig
 
@@ -38,9 +38,7 @@ def test_urban_3d_renderer_render_rgb_array():
         "current_frame": 0,
         "uav_positions": np.array([[0.0, 0.0, 50.0], [50.0, 50.0, 60.0]]),
         "ue_positions": np.array([[-50.0, -50.0, 0.0], [20.0, 30.0, 0.0]]),
-        "buildings": [
-            {"position": [10, 10, 0], "size": [20, 20, 30]}
-        ],
+        "buildings": [{"position": [10, 10, 0], "size": [20, 20, 30]}],
         "links": [
             {"source": [0.0, 0.0, 50.0], "target": [-50.0, -50.0, 0.0], "los": True}
         ],

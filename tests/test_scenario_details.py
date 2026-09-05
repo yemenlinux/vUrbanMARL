@@ -32,7 +32,7 @@ def test_battery_consumption_kinematics(env_config):
         seed=42,
         device=torch.device("cpu"),
         scenario="uav_navigation",
-        **env_config
+        **env_config,
     )
 
     td = env.reset()
@@ -42,9 +42,11 @@ def test_battery_consumption_kinematics(env_config):
     group_name = list(env.group_map.keys())[0]
     action_dict = {
         group_name: TensorDict(
-            {"action": torch.tensor([[[20.0, 0.0, 5.0],
-                                      [20.0, 0.0, 5.0],
-                                      [20.0, 0.0, 5.0]]])},
+            {
+                "action": torch.tensor(
+                    [[[20.0, 0.0, 5.0], [20.0, 0.0, 5.0], [20.0, 0.0, 5.0]]]
+                )
+            },
             batch_size=torch.Size([1, 3]),
             device=env.device,
         )
@@ -70,7 +72,7 @@ def test_done_termination_on_max_steps(env_config):
         seed=1,
         device=torch.device("cpu"),
         scenario="uav_navigation",
-        **env_config_short
+        **env_config_short,
     )
 
     td = env.reset()
@@ -99,7 +101,7 @@ def test_coverage_scenario_distance_penalty(env_config):
         seed=10,
         device=torch.device("cpu"),
         scenario="coverage",
-        **coverage_config
+        **coverage_config,
     )
 
     env.reset()
@@ -129,7 +131,7 @@ def test_global_info_dictionary_structure(env_config):
         seed=77,
         device=torch.device("cpu"),
         scenario="uav_navigation",
-        **env_config
+        **env_config,
     )
 
     env.reset()

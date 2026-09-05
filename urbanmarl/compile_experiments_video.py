@@ -5,14 +5,13 @@ into a unified compilation video.
 """
 
 import argparse
-import os
 import re
 from pathlib import Path
 
 try:
-    from moviepy.editor import VideoFileClip, concatenate_videoclips
+    from moviepy.editor import concatenate_videoclips, VideoFileClip
 except ImportError:
-    from moviepy import VideoFileClip, concatenate_videoclips
+    from moviepy import concatenate_videoclips, VideoFileClip
 
 
 def natural_sort_key(filepath: Path) -> list:
@@ -28,7 +27,7 @@ def natural_sort_key(filepath: Path) -> list:
     """
     return [
         int(text) if text.isdigit() else text.lower()
-        for text in re.split(r'(\d+)', str(filepath))
+        for text in re.split(r"(\d+)", str(filepath))
     ]
 
 
@@ -67,9 +66,7 @@ def generate_combined_mp4(source_dir: str, output_path: str) -> None:
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     print(f"Writing final video to {output_path}...")
-    final_clip.write_videofile(
-        output_path, codec="libx264", audio_codec="aac", fps=20
-    )
+    final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", fps=20)
 
     for clip in clips:
         clip.close()

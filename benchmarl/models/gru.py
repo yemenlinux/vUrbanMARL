@@ -15,7 +15,6 @@ from tensordict import TensorDict, TensorDictBase
 from tensordict.utils import expand_as_right, unravel_key_list
 from torch import nn
 from torchrl.data.tensor_specs import Composite, Unbounded
-
 from torchrl.modules import GRUCell, MLP, MultiAgentMLP
 
 from benchmarl.models.common import Model, ModelConfig

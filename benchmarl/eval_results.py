@@ -170,7 +170,7 @@ class Plotting:
         environment_comparison_matrix,
         metric_name: Optional[str] = METRIC_TO_PLOT,
         metrics_to_normalize: Optional[List[str]] = METRICS_TO_NORMALIZE,
-        **kwargs
+        **kwargs,
     ):
         return performance_profiles(
             environment_comparison_matrix,
@@ -185,7 +185,7 @@ class Plotting:
         metric_name: Optional[str] = METRIC_TO_PLOT,
         metrics_to_normalize: Optional[List[str]] = METRICS_TO_NORMALIZE,
         save_tabular_as_latex: bool = True,
-        **kwargs
+        **kwargs,
     ):
         return aggregate_scores(
             dictionary=environment_comparison_matrix,
@@ -201,7 +201,7 @@ class Plotting:
         algorithms_to_compare: List[List[str]],
         metric_name: Optional[str] = METRIC_TO_PLOT,
         metrics_to_normalize: Optional[List[str]] = METRICS_TO_NORMALIZE,
-        **kwargs
+        **kwargs,
     ):
         return probability_of_improvement(
             environment_comparison_matrix,
@@ -216,7 +216,7 @@ class Plotting:
         sample_effeciency_matrix,
         metric_name: Optional[str] = METRIC_TO_PLOT,
         metrics_to_normalize: Optional[List[str]] = METRICS_TO_NORMALIZE,
-        **kwargs
+        **kwargs,
     ):
         return sample_efficiency_curves(
             dictionary=sample_effeciency_matrix,
@@ -236,7 +236,7 @@ class Plotting:
         env,
         metric_name: Optional[str] = METRIC_TO_PLOT,
         metrics_to_normalize: Optional[List[str]] = METRICS_TO_NORMALIZE,
-        **kwargs
+        **kwargs,
     ):
         return plot_single_task(
             processed_data=processed_data,

@@ -52,7 +52,10 @@ class VectorizedMECQueue:
         B, N = arrival_rates.shape
 
         mu_safe = torch.clamp(service_rates, min=1e-6)
-        c_safe = torch.clamp(num_cores.float(), min=1.0)
+        if not isinstance(num_cores, torch.Tensor):
+            c_safe = torch.full((B, N), float(num_cores), device=arrival_rates.device)
+        else:
+            c_safe = torch.clamp(num_cores.float(), min=1.0)
         lam_safe = torch.clamp(arrival_rates, min=1e-6)
 
         a = lam_safe / mu_safe
@@ -89,12 +92,8 @@ class VectorizedMECQueue:
         w_q = l_q / lam_safe
         w_s = w_q + (1.0 / mu_safe)
 
-        l_q = torch.where(
-            stable_mask, l_q, torch.tensor(1e6, device=self.device)
-        )
-        w_s = torch.where(
-            stable_mask, w_s, torch.tensor(1e6, device=self.device)
-        )
+        l_q = torch.where(stable_mask, l_q, torch.tensor(1e6, device=self.device))
+        w_s = torch.where(stable_mask, w_s, torch.tensor(1e6, device=self.device))
 
         return {
             "utilization": rho,

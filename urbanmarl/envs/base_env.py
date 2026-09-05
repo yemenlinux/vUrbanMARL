@@ -1,41 +1,34 @@
-from __future__ import annotations
-
 """UrbanMARL Environment Base Wrappers.
 
 Provides TorchRL-compatible multi-agent environment wrappers for 3D urban UAV/MEC
 simulations supporting batched execution across CPU and GPU devices.
 """
 
+from __future__ import annotations
+
 import importlib.util
 from typing import Optional
 
 import torch
-from tensordict import LazyStackedTensorDict, TensorDict, TensorDictBase
+from tensordict import TensorDict, TensorDictBase
 from torchrl.data.tensor_specs import (
-    Bounded,
     Categorical,
     Composite,
     DEVICE_TYPING,
-    MultiCategorical,
-    MultiOneHot,
-    OneHot,
     StackedComposite,
-    TensorSpec,
-    Unbounded,
 )
 from torchrl.envs.common import _EnvWrapper, EnvBase
 from torchrl.envs.utils import (
-    MarlGroupMapType,
     _classproperty,
     _selective_unsqueeze,
     check_marl_grouping,
+    MarlGroupMapType,
 )
 
 from urbanmarl.models.urban_map import VectorizedUrbanMap
-from urbanmarl.scenarios import UrbanScenario, load_scenario
+from urbanmarl.scenarios import load_scenario, UrbanScenario
 
 _has_urbanmarl = importlib.util.find_spec("urbanmarl") is not None
-
 
 
 class UrbanEnvBase(_EnvWrapper):
@@ -64,6 +57,7 @@ class UrbanEnvBase(_EnvWrapper):
     def lib(self):
         """Returns the imported urbanmarl module package reference."""
         import urbanmarl
+
         return urbanmarl
 
     @_classproperty
@@ -152,9 +146,7 @@ class UrbanEnvBase(_EnvWrapper):
             VectorizedUrbanMap: The created batch 3D urban map instance.
         """
         self.scenario = load_scenario(self.scenario_name, self.scenario_config)
-        return VectorizedUrbanMap(
-            self.batch_size[0], self.volume_size, self.device
-        )
+        return VectorizedUrbanMap(self.batch_size[0], self.volume_size, self.device)
 
     def _get_default_group_map(self, agent_names: list[str]) -> dict:
         """Derives default multi-agent grouping mapping from agent names.
@@ -171,9 +163,7 @@ class UrbanEnvBase(_EnvWrapper):
             agent_name_split = agent_name.split("_")
             if len(agent_name_split) == 1:
                 follows_convention = False
-            follows_convention = (
-                follows_convention and agent_name_split[-1].isdigit()
-            )
+            follows_convention = follows_convention and agent_name_split[-1].isdigit()
             if not follows_convention:
                 break
             group_name = "_".join(agent_name_split[:-1])
@@ -182,9 +172,7 @@ class UrbanEnvBase(_EnvWrapper):
             else:
                 group_map[group_name] = [agent_name]
         if not follows_convention:
-            group_map = MarlGroupMapType.ALL_IN_ONE_GROUP.get_group_map(
-                agent_names
-            )
+            group_map = MarlGroupMapType.ALL_IN_ONE_GROUP.get_group_map(agent_names)
         if "agent" in group_map and len(group_map) == 1:
             agent_group = group_map["agent"]
             group_map["agents"] = agent_group
@@ -207,7 +195,7 @@ class UrbanEnvBase(_EnvWrapper):
     def agents(self) -> list[str]:
         """List of all active agent identifiers across groups."""
         agents = []
-        for group, agent_names in self.group_map.items():
+        for agent_names in self.group_map.values():
             agents.extend(agent_names)
         return agents
 
@@ -224,7 +212,7 @@ class UrbanEnvBase(_EnvWrapper):
     @property
     def agent_indices_to_names_map(self) -> dict[int, str]:
         """Mapping from index position to agent name."""
-        return {i: agent for i, agent in enumerate(self.agents)}
+        return dict(enumerate(self.agents))
 
     @property
     def agent_names(self) -> list[str]:
@@ -251,25 +239,17 @@ class UrbanEnvBase(_EnvWrapper):
             observation_specs = []
             reward_specs = []
             info_specs = []
-            for agent in agent_list:
+            for _agent in agent_list:
                 action_specs.append(
-                    Composite(
-                        {"action": self.scenario.action_spec(self, group)}
-                    )
+                    Composite({"action": self.scenario.action_spec(self, group)})
                 )
                 observation_specs.append(
                     Composite(
-                        {
-                            "observation": self.scenario.observation_spec(
-                                self, group
-                            )
-                        }
+                        {"observation": self.scenario.observation_spec(self, group)}
                     )
                 )
                 reward_specs.append(
-                    Composite(
-                        {"reward": self.scenario.reward_spec(self, group)}
-                    )
+                    Composite({"reward": self.scenario.reward_spec(self, group)})
                 )
                 info = self.scenario.info_agent_spec(self, group)
                 if info:
@@ -287,9 +267,7 @@ class UrbanEnvBase(_EnvWrapper):
             full_reward_spec_unbatched[group] = group_reward_spec
 
             if group_info_spec is not None:
-                full_observation_spec_unbatched[(group, "info")] = (
-                    group_info_spec
-                )
+                full_observation_spec_unbatched[(group, "info")] = group_info_spec
 
             group_het_specs = isinstance(
                 group_observation_spec, StackedComposite
@@ -345,7 +323,7 @@ class UrbanEnvBase(_EnvWrapper):
         """Computes episode termination flags (done, terminated, truncated)."""
         return self.scenario.done(self)
 
-    def _update_reward() -> None:
+    def _update_reward(self) -> None:
         """Computes and updates scenario rewards."""
         self.reward = self.scenario.reward(self)
 
@@ -381,9 +359,7 @@ class UrbanEnvBase(_EnvWrapper):
 
         obs = self._get_obs()
         for group, agent_names in self.group_map.items():
-            indices = [
-                self.agent_names_to_indices_map[name] for name in agent_names
-            ]
+            indices = [self.agent_names_to_indices_map[name] for name in agent_names]
             group_obs = obs[:, indices, :]
             group_batch_size = self.batch_size + torch.Size([len(agent_names)])
 
@@ -449,9 +425,7 @@ class UrbanEnvBase(_EnvWrapper):
             source["info"] = self.scenario.info_global(self)
 
         for group, agent_names in self.group_map.items():
-            indices = [
-                self.agent_names_to_indices_map[name] for name in agent_names
-            ]
+            indices = [self.agent_names_to_indices_map[name] for name in agent_names]
             group_obs = obs[:, indices, :]
             group_reward = self.scenario.reward(self, group)[:, indices, :]
             group_batch_size = self.batch_size + torch.Size([len(agent_names)])
@@ -485,9 +459,7 @@ class UrbanEnvBase(_EnvWrapper):
         )
         return tensordict_out
 
-    def read_obs(
-        self, observations: torch.Tensor | dict
-    ) -> torch.Tensor | TensorDict:
+    def read_obs(self, observations: torch.Tensor | dict) -> torch.Tensor | TensorDict:
         """Formats and unsqueezes observation data matching batch size.
 
         Args:
@@ -499,9 +471,7 @@ class UrbanEnvBase(_EnvWrapper):
         if isinstance(observations, torch.Tensor):
             return _selective_unsqueeze(observations, batch_size=self.batch_size)
         return TensorDict(
-            source={
-                key: self.read_obs(value) for key, value in observations.items()
-            },
+            source={key: self.read_obs(value) for key, value in observations.items()},
             batch_size=self.batch_size,
         )
 
@@ -527,6 +497,18 @@ class UrbanEnvBase(_EnvWrapper):
         """
         self._env.to(device)
         return super().to(device)
+
+    def render(self, mode: str = "rgb_array", **kwargs):
+        """Renders the environment using the active scenario renderer.
+
+        Args:
+            mode (str): Rendering mode ('rgb_array' or 'human'). Defaults to 'rgb_array'.
+            **kwargs: Extra arguments passed to scenario.render().
+
+        Returns:
+            Rendered frame (np.ndarray if 'rgb_array') or Matplotlib figure (if 'human').
+        """
+        return self.scenario.render(self, mode=mode, **kwargs)
 
 
 class UrbanEnv(UrbanEnvBase):
@@ -560,4 +542,3 @@ class UrbanEnv(UrbanEnvBase):
             scenario=scenario,
             **kwargs,
         )
-
