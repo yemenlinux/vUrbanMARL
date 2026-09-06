@@ -69,7 +69,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/yemenlinux/vUrbanMARL"
-Documentation = "https://urbanmarl.readthedocs.io"
+Documentation = "https://yemenlinux.github.io/vUrbanMARL"
 Repository = "https://github.com/yemenlinux/vUrbanMARL.git"
 Issues = "https://github.com/yemenlinux/vUrbanMARL/issues"
 

@@ -55,7 +55,7 @@ UrbanMARL features a comprehensive suite of multi-agent urban scenarios covering
 | `uav_mobile_ue` | `UavMobileUeScenario` | Persistent aerial tracking of dynamic ground users moving under Gauss-Markov, Manhattan Grid, and Hotspot flocking models. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position, Battery, UE Pos & LoS |
 | `uav_lidar_navigation` | `UavLidarNavigationScenario` | POMDP safe urban navigation using batched 360° LiDAR ray-casting rangefinder beams and proximity margin penalties. | Continuous velocity $(v_h, \phi, v_z)$ | Target Vector, Velocity & 360° LiDAR Beams |
 | `uavmec_advanced_physics` | `UavMecAdvancedPhysicsScenario` | High-fidelity rotary-wing aerodynamic propulsion power dissipation (Zeng et al.), 3GPP 38.901 3D directional antennas, and multi-core MEC digital twin. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Kinematics, Battery, Directional Rates & Queues |
-| `default` | `DefaultScenario` | Baseline urban MARL template for rapid prototyping and custom scenario development. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
+| `default` | `DefaultScenario` | Baseline urban MARL template for rapid prototyping and custom scenario development. In future updates, we will add more examples and scenarios. | Continuous velocity $(v_h, \phi, v_z)$ | UAV Position $(x,y,z)$ & Battery level |
 
 ---
 
@@ -105,50 +105,60 @@ Scenarios located in `urbanmarl/scenarios/` are **automatically discovered and r
 - **Python**: $\ge 3.10$ tested on 3.12
 - **PyTorch**: $\ge 2.12.0$ (CUDA recommended for large batch sizes)
 
-### Setup Steps
+### Installation using ``uv`` (Recommended)
 
-1. **Clone the repository**:
+`uv` is an extremely fast Python package installer. UrbanMARL's configuration is optimized for `uv`, allowing it to automatically route PyTorch dependencies to the correct hardware-specific index without requiring manual URL flags.
+
+**First, ensure `uv` is installed on your system**:
+
+```bash
+
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Once installed, the `pyproject.toml` is configured to enable `uv` detecting your available hardware (CPU, GPU). Just run the following commands to install UrbanMARL.
+
+**Clone the UrbanMARL repository**:
 
    ```bash
    git clone https://github.com/yemenlinux/vUrbanMARL.git
+   
    cd vUrbanMARL
    ```
 
-2. **Create a virtual environment** (optional but recommended):
+**Create Python virtual environment and activate it**:
 
-    Using conda:
+```bash
+    uv venv --python 3.12
 
-    ```bash
-        conda create -n vurbanmarl python=3.12
-        conda activate vurbanmarl
-    ```
+    source .venv/bin/activate
+```
 
-    Using standard Python venv:
+**Option 1**: Install from PyPi index:
 
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+```bash
+    uv pip install urbanmarl
+```
 
-3. **Install dependencies and the package**:
+**Option 2**: Install for development from the source:
 
-    For CPU-only installation:
+```bash
+    uv pip install -e .[test,docs]
+```
 
-    ```bash
-    pip install -r requirements/cpu.txt
-    ```
+If you got a dependency conflict with benchmarl, install benchmarl from our compatible fork.
 
-    For GPU installation (CUDA 12.6 - recommended for old GPUs):
+```bash
+    uv pip install urbanmarl https://github.com/yemenlinux/BenchMARL.git
+```
 
-    ```bash
-    pip install -r requirements/cuda126.txt
-    ```
+More [installation](https://yemenlinux.github.io/vUrbanMARL/getting_started/installation.html) methods in the documents.
 
-    For GPU installation (CUDA 13.0 - recommended for new GPUs):
+---
 
-    ```bash
-    pip install -r requirements/cuda130.txt
-    ```
+## Documentation
+
+Read documentation [here](https://yemenlinux.github.io/vUrbanMARL).
 
 ---
 

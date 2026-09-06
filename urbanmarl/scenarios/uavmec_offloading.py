@@ -544,6 +544,11 @@ class Scenario(UrbanScenario):
         """Specifies keys recorded in global info dictionary."""
         return Composite(
             {
+                "urban_params": Unbounded(
+                    shape=torch.Size([4]),
+                    dtype=torch.float32,
+                    device=env.device,
+                ),
                 "completed_tasks": Unbounded(
                     shape=torch.Size([1]),
                     dtype=torch.float32,
@@ -609,6 +614,7 @@ class Scenario(UrbanScenario):
     def info_global(self, env) -> Optional[dict]:
         """Extracts scalar metrics for BenchMARL and TensorBoard/CSV logging."""
         return {
+            "urban_params": env._env.info[:, :4].view(env.batch_size[0], -1),
             "completed_tasks": env.uav_completed_tasks.sum(dim=-1, keepdim=True),
             "dropped_tasks": env.uav_dropped_tasks.sum(dim=-1, keepdim=True),
             "mean_system_time": env.uav_mec_system_time.mean(dim=-1, keepdim=True),

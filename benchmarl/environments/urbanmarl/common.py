@@ -109,6 +109,7 @@ class UrbanEnvTask(Task):
     UAV_MOBILE_UE = None
     UAV_LIDAR_NAVIGATION = None
     UAVMEC_ADVANCED_PHYSICS = None
+    MEC_OFFLOADING = None
 
     @staticmethod
     def associated_class():

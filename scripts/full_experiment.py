@@ -103,13 +103,13 @@ def config_experiment(
 # Algorithm configurations to test
 _algorithm_configs = [
     # On-policy algorithms
-    # MappoConfig.get_from_yaml(),
-    # IppoConfig.get_from_yaml(),
+    MappoConfig.get_from_yaml(),
+    IppoConfig.get_from_yaml(),
     # Off-policy algorithms
-    # MaddpgConfig.get_from_yaml(),
-    # MasacConfig.get_from_yaml(),
+    MaddpgConfig.get_from_yaml(),
+    MasacConfig.get_from_yaml(),
     IddpgConfig.get_from_yaml(),
-    # IsacConfig.get_from_yaml(),
+    IsacConfig.get_from_yaml(),
 ]
 
 
@@ -121,7 +121,7 @@ output_dir = project_root / "outputs" / "experiments"
 
 if __name__ == "__main__":
     # Experiment parameters
-    num_envs = 72
+    num_envs = 10
     max_n_steps = 100
     max_n_iters = 10  # for text then can resume using resume_experiments.py
     experiment_dir = "experiments"
@@ -142,13 +142,14 @@ if __name__ == "__main__":
     # Loads from "benchmarl/conf/task/urbanmarl"
     tasks = [
         # uncomment the tasks you want to run
-        # UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
-        # UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
-        # UrbanEnvTask.COVERAGE.get_from_yaml(),
-        # UrbanEnvTask.UAVMEC_OFFLOADING.get_from_yaml(),
-        # UrbanEnvTask.UAV_MOBILE_UE.get_from_yaml(),
-        # UrbanEnvTask.UAV_LIDAR_NAVIGATION.get_from_yaml(),
+        UrbanEnvTask.UAV_NAVIGATION.get_from_yaml(),
+        UrbanEnvTask.UAV_UE_LOS.get_from_yaml(),
+        UrbanEnvTask.COVERAGE.get_from_yaml(),
+        UrbanEnvTask.UAVMEC_OFFLOADING.get_from_yaml(),
+        UrbanEnvTask.UAV_MOBILE_UE.get_from_yaml(),
+        UrbanEnvTask.UAV_LIDAR_NAVIGATION.get_from_yaml(),
         UrbanEnvTask.UAVMEC_ADVANCED_PHYSICS.get_from_yaml(),
+        UrbanEnvTask.MEC_OFFLOADING.get_from_yaml(),
     ]
 
     # Loads from "benchmarl/conf/model/layers"
@@ -158,6 +159,11 @@ if __name__ == "__main__":
     for seed in _seeds:
         for task in tasks:
             for algorithm_config in _algorithm_configs:
+                # Render only for the first seed to avoid excessive rendering during experiments
+                if seed == 0:
+                    experiment_config.render = True
+                else:
+                    experiment_config.render = False
                 experiment = Experiment(
                     task=task,
                     algorithm_config=algorithm_config,
