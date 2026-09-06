@@ -19,6 +19,7 @@ def test_task_yaml_loading(task):
         UrbanEnvTask.UAV_MOBILE_UE,
         UrbanEnvTask.UAV_LIDAR_NAVIGATION,
         UrbanEnvTask.UAVMEC_ADVANCED_PHYSICS,
+        UrbanEnvTask.MEC_OFFLOADING,
     ],
 )
 def test_new_tasks_env_fun(task):

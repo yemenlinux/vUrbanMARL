@@ -124,6 +124,7 @@ def test_dynamic_auto_registration():
     expected = [
         "coverage",
         "default",
+        "mec_offloading",
         "uav_lidar_navigation",
         "uav_mobile_ue",
         "uav_navigation",
@@ -177,3 +178,4 @@ def test_backward_compatibility_getattr():
     assert hasattr(scenarios_mod, "UAVMECScenario")
     assert hasattr(scenarios_mod, "UavMecAdvancedPhysicsScenario")
     assert hasattr(scenarios_mod, "CoverageScenario")
+    assert hasattr(scenarios_mod, "MecOffloadingScenario")

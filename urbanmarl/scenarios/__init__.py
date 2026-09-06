@@ -32,6 +32,7 @@ _SCENARIO_NAME_ALIASES: Dict[str, str] = {
     "UavLidarNavigationScenario": "uav_lidar_navigation",
     "UavMecAdvancedPhysicsScenario": "uavmec_advanced_physics",
     "CoverageScenario": "coverage",
+    "MecOffloadingScenario": "mec_offloading",
 }
 
 
