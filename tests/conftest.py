@@ -6,6 +6,7 @@
 import importlib
 
 import pytest
+import torch
 from benchmarl.experiment import ExperimentConfig
 from benchmarl.models import CnnConfig, GnnConfig, GruConfig, LstmConfig, MlpConfig
 from benchmarl.models.common import ModelConfig, SequenceModelConfig
@@ -24,6 +25,12 @@ def experiment_config(tmp_path) -> ExperimentConfig:
     experiment_config.save_folder = str(save_dir)
     experiment_config.max_n_iters = 3
     experiment_config.max_n_frames = None
+
+    if torch.cuda.is_available():
+        experiment_config.device = "cuda"
+        experiment_config.sampling_device = "cuda"
+        experiment_config.train_device = "cuda"
+        experiment_config.buffer_device = "cuda"
 
     experiment_config.on_policy_n_minibatch_iters = 1
     experiment_config.on_policy_minibatch_size = 2
