@@ -814,15 +814,43 @@ class Experiment(CallbackNotifier):
     def close(self):
         """Close the experiment."""
         if not self.config.collect_with_grad:
-            self.collector.shutdown()
+            if hasattr(self, "collector") and self.collector is not None:
+                self.collector.shutdown()
         else:
-            self.rollout_env.close()
-        self.test_env.close()
-        self.logger.finish()
+            if hasattr(self, "rollout_env") and self.rollout_env is not None:
+                self.rollout_env.close()
+        if hasattr(self, "test_env") and self.test_env is not None:
+            self.test_env.close()
+        if hasattr(self, "logger") and self.logger is not None:
+            self.logger.finish()
 
-        for buffer in self.replay_buffers.values():
-            if hasattr(buffer.storage, "scratch_dir"):
-                shutil.rmtree(buffer.storage.scratch_dir, ignore_errors=False)
+        if hasattr(self, "replay_buffers"):
+            for buffer in self.replay_buffers.values():
+                if hasattr(buffer.storage, "scratch_dir"):
+                    shutil.rmtree(buffer.storage.scratch_dir, ignore_errors=False)
+                if hasattr(buffer, "empty"):
+                    buffer.empty()
+            self.replay_buffers.clear()
+
+        if hasattr(self, "losses"):
+            self.losses.clear()
+        if hasattr(self, "target_updaters"):
+            self.target_updaters.clear()
+        if hasattr(self, "optimizers"):
+            self.optimizers.clear()
+        if hasattr(self, "group_policies"):
+            self.group_policies.clear()
+
+        self.policy = None
+        self.collector = None
+        self.test_env = None
+        self.rollout_env = None
+
+        import gc
+
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     def _get_excluded_keys(self, group: str):
         excluded_keys = []

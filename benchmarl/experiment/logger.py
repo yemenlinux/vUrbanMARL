@@ -275,6 +275,11 @@ class Logger:
                 import wandb
 
                 wandb.finish()
+            elif isinstance(logger, TensorboardLogger):
+                if hasattr(logger, "experiment") and hasattr(
+                    logger.experiment, "close"
+                ):
+                    logger.experiment.close()
 
     def _get_reward(
         self, group: str, td: TensorDictBase, remove_agent_dim: bool = False
