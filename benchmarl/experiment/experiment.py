@@ -832,16 +832,6 @@ class Experiment(CallbackNotifier):
                     buffer.empty()
             self.replay_buffers.clear()
 
-        if hasattr(self, "losses"):
-            self.losses.clear()
-        if hasattr(self, "target_updaters"):
-            self.target_updaters.clear()
-        if hasattr(self, "optimizers"):
-            self.optimizers.clear()
-        if hasattr(self, "group_policies"):
-            self.group_policies.clear()
-
-        self.policy = None
         self.collector = None
         self.test_env = None
         self.rollout_env = None
