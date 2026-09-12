@@ -10,7 +10,7 @@ module-root = ""
 
 [project]
 name = "urbanmarl"
-version = "0.3.0"
+version = "0.3.1"
 description = "Vectorized urban Multi-Agent reinforcement Learning for 6G network digital twins"
 readme = "README.md"
 authors = [
