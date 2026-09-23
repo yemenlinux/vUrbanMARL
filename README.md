@@ -158,7 +158,7 @@ More [installation](https://yemenlinux.github.io/vUrbanMARL/getting_started/inst
 
 ## Documentation
 
-Read documentation [here](https://yemenlinux.github.io/vUrbanMARL).
+Read documentation [here](https://yemenlinux.github.io/vUrbanMARL/).
 
 ---
 

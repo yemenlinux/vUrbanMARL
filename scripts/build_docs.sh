@@ -25,11 +25,11 @@ fi
 
 echo "Using Sphinx binary: ${SPHINX_BIN}"
 
-# Build documentation into docs/_build/html
-${SPHINX_BIN} -b html docs/source docs/_build/html
+# Build documentation into docs/html
+${SPHINX_BIN} -b html docs/source docs/html
 
 # Ensure .nojekyll is present for GitHub Pages compatibility
-touch docs/_build/html/.nojekyll
+touch docs/html/.nojekyll
 
 echo "=== Documentation successfully built! ==="
-echo "Output directory: ${PROJECT_ROOT}/docs/_build/html/index.html"
+echo "Output directory: ${PROJECT_ROOT}/docs/html/index.html"

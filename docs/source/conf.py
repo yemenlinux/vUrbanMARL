@@ -18,8 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.resolve()))
 project = "UrbanMARL"
 copyright = "2026, Basheer Raddwan"
 author = "Basheer Raddwan"
-release = "0.1.0"
-version = "0.1.0"
+release = "0.3.1"
+version = "0.3.1"
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -28,6 +28,28 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.coverage",
+]
+
+# Mock heavy/binary third-party packages so autodoc runs quickly and reliably without requiring compiled wheels
+autodoc_mock_imports = [
+    "torch",
+    "torchrl",
+    "tensordict",
+    "benchmarl",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "pandas",
+    "sklearn",
+    "gymnasium",
+    "wandb",
+    "moviepy",
+    "cv2",
+    "av",
+    "hydra",
+    "omegaconf",
+    "torch_geometric",
+    "torchcodec",
 ]
 
 # Napoleon settings for Google-style docstrings
@@ -39,7 +61,7 @@ napoleon_include_special_with_doc = True
 napoleon_use_admonition_for_examples = True
 napoleon_use_admonition_for_notes = True
 napoleon_use_admonition_for_references = True
-napoleon_use_ivar = False
+napoleon_use_ivar = True
 napoleon_use_param = True
 napoleon_use_rtype = True
 napoleon_preprocess_types = True
@@ -48,7 +70,7 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "html", "Thumbs.db", ".DS_Store"]
 
 try:
     import sphinx_rtd_theme
