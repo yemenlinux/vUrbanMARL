@@ -101,7 +101,7 @@ def config_experiment(
 
     experiment_config.render = render
     experiment_config.evaluation_interval = int(eval_interval * frames_per_batch)
-    experiment_config.evaluation_episodes = 5
+    experiment_config.evaluation_episodes = 10
     experiment_config.loggers = ["csv", "tensorboard"]
 
     experiment_config.save_folder = output_dir
