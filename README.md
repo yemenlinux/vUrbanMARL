@@ -140,16 +140,16 @@ Once installed, the `pyproject.toml` is configured to enable `uv` detecting your
     uv pip install urbanmarl
 ```
 
-**Option 2**: Install for development from the source:
-
-```bash
-    uv pip install -e .[test,docs]
-```
-
 If you got a dependency conflict with benchmarl, install benchmarl from our compatible fork.
 
 ```bash
     uv pip install urbanmarl https://github.com/yemenlinux/BenchMARL.git
+```
+
+**Option 2**: Install for development from the source:
+
+```bash
+    uv pip install -e .[test,docs]
 ```
 
 More [installation](https://yemenlinux.github.io/vUrbanMARL/getting_started/installation.html) methods in the documents.
