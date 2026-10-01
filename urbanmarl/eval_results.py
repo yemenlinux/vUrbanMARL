@@ -565,7 +565,7 @@ class UrbanVisualizer:
         dictionary: Optional[Dict[str, List[pd.DataFrame]]] = None,
         output_dir: Optional[Union[str, Path]] = None,
         pdf: bool = False,
-        fill: bool = True,
+        fill: bool = False,
     ) -> None:
         """Plots every metric in dataset individually."""
         data_dict = dictionary if dictionary is not None else self.dataset.data
@@ -645,12 +645,12 @@ class UrbanVisualizer:
         algo_colors: Optional[Dict[str, tuple]] = None,
         output_dir: Optional[Union[str, Path]] = None,
         metric_list: Sequence[str] = (),
-        n_cols: int = 2,
+        n_cols: int = 3,
         projection: str = "cartesian",
         file_name: str = "compare_metrics",
         figsize: Optional[Tuple[int, int]] = None,
         pdf: bool = False,
-        fill: bool = True,
+        fill: bool = False,
     ) -> Optional[Path]:
         """Plots a grid of multiple metrics across algorithms.
 
@@ -817,7 +817,7 @@ class UrbanVisualizer:
         file_name: str = "compare_metrics",
         figsize: Optional[Tuple[int, int]] = None,
         pdf: bool = False,
-        fill: bool = True,
+        fill: bool = False,
     ) -> Optional[Path]:
         """Plots a metric separated into a grid across tasks."""
         data_dict = dictionary if dictionary is not None else self.dataset.data
@@ -978,7 +978,7 @@ class UrbanVisualizer:
         output_dir: Union[str, Path],
         figsize: Optional[Tuple[int, int]] = None,
         pdf: bool = False,
-        fill: bool = True,
+        fill: bool = False,
     ) -> None:
         """Generates comprehensive catalogue of all scalar metrics."""
         catalog_dir = Path(output_dir) / "catalogue"
@@ -1071,7 +1071,7 @@ class UrbanVisualizer:
         output_dir: Union[str, Path],
         figsize: Optional[Tuple[int, int]] = None,
         pdf: bool = True,
-        fill: bool = True,
+        fill: bool = False,
     ) -> None:
         """Generates publication report plots."""
         out_path = Path(output_dir)
@@ -1470,7 +1470,7 @@ def plot_all_metrics(
     output_dir: Union[str, Path],
     algo_colors: Dict[str, tuple],
     pdf: bool = False,
-    fill: bool = True,
+    fill: bool = False,
 ) -> None:
     """Wrapper calling UrbanVisualizer.plot_all_metrics."""
     dataset = EvaluationDataset([])
@@ -1486,12 +1486,12 @@ def plot_group_metrics(
     algo_colors: Dict[str, tuple],
     output_dir: Optional[Union[str, Path]] = None,
     metric_list: Sequence[str] = (),
-    n_cols: int = 2,
+    n_cols: int = 3,
     projection: str = "cartesian",
     file_name: str = "compare_metrics",
     figsize: Tuple[int, int] = FIGURE_SIZE,
     pdf: bool = False,
-    fill: bool = True,
+    fill: bool = False,
 ) -> Optional[Path]:
     """Wrapper calling UrbanVisualizer.plot_group_metrics."""
     dataset = EvaluationDataset([])
@@ -1523,7 +1523,7 @@ def plot_group_tasks(
     file_name: str = "compare_metrics",
     figsize: Tuple[int, int] = FIGURE_SIZE,
     pdf: bool = False,
-    fill: bool = True,
+    fill: bool = False,
 ) -> Optional[Path]:
     """Wrapper calling UrbanVisualizer.plot_group_tasks."""
     dataset = EvaluationDataset([])
@@ -1551,7 +1551,7 @@ def plot_catalogue(
     algo_colors: Dict[str, tuple],
     figsize: Tuple[int, int] = FIGURE_SIZE,
     pdf: bool = False,
-    fill: bool = True,
+    fill: bool = False,
 ) -> None:
     """Wrapper calling UrbanVisualizer.plot_catalogue."""
     dataset = EvaluationDataset([])
@@ -1590,7 +1590,7 @@ def plot_report(
     algo_colors: Dict[str, tuple],
     figsize: Tuple[int, int] = FIGURE_SIZE,
     pdf: bool = True,
-    fill: bool = True,
+    fill: bool = False,
 ) -> None:
     """Wrapper calling UrbanVisualizer.plot_report."""
     dataset = EvaluationDataset([])
